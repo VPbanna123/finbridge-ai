@@ -34,6 +34,8 @@ export const VALID_OCCUPATIONS = [
   "other",
 ];
 export const VALID_AGE_GROUPS = ["18-25", "26-40", "41-60", "60+"];
+
+export const FARMER_PORTAL_URL = "https://krishisakhi.vijaypal.me/login";
 export const VALID_INCOME_RANGES = [
   "below_15000",
   "15000_30000",

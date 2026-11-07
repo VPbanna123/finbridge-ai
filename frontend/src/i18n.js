@@ -11,6 +11,10 @@ const r = {
       blogs: "Blog",
       survey: "Survey",
       profile: "Profile",
+      farmerPortal: "Farmer Portal",
+      farmerPortalTitle: "Are you a farmer?",
+      farmerPortalText:
+        "Visit our dedicated farmer portal for crop loans, insurance, subsidies and market updates.",
       login: "Login",
       signup: "Sign up",
       logout: "Logout",
@@ -37,6 +41,10 @@ const r = {
       blogs: "ब्लॉग",
       survey: "सर्वेक्षण",
       profile: "प्रोफ़ाइल",
+      farmerPortal: "किसान पोर्टल",
+      farmerPortalTitle: "क्या आप किसान हैं?",
+      farmerPortalText:
+        "फसल ऋण, बीमा, सब्सिडी और बाज़ार की जानकारी के लिए हमारे किसान पोर्टल पर जाएँ।",
       login: "लॉगिन",
       signup: "साइन अप",
       logout: "लॉग आउट",
@@ -63,6 +71,10 @@ const r = {
       blogs: "ಬ್ಲಾಗ್",
       survey: "ಸಮೀಕ್ಷೆ",
       profile: "ಪ್ರೊಫೈಲ್",
+      farmerPortal: "ಕೃಷಿಕ ಪೋರ್ಟಲ್",
+      farmerPortalTitle: "ನೀವು ರೈತರೇ?",
+      farmerPortalText:
+        "ಬೆಳೆ ಸಾಲ, ವಿಮಾ, ಸಬ್ಸಿಡಿ ಮತ್ತು ಮಾರುಕಟ್ಟೆ ಮಾಹಿತಿಗಳಿಗಾಗಿ ನಮ್ಮ ಕೃಷಿಕ ಪೋರ್ಟಲ್‌ಗೆ ಭೇಟಿ ನೀಡಿ.",
       login: "ಲಾಗಿನ್",
       signup: "ಸೈನ್ ಅಪ್",
       logout: "ಲಾಗ್‌ಔಟ್",

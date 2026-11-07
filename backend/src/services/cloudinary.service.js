@@ -7,7 +7,8 @@ const ALLOWED_TYPES = ["image/png", "image/jpeg", "image/jpg", "image/webp", "im
 
 export const isCloudinaryConfigured = () =>
   Boolean(
-    env.CLOUDINARY_CLOUD_NAME && env.CLOUDINARY_API_KEY && env.CLOUDINARY_API_SECRET
+    env.CLOUDINARY_URL ||
+      (env.CLOUDINARY_CLOUD_NAME && env.CLOUDINARY_API_KEY && env.CLOUDINARY_API_SECRET)
   );
 
 let configured = false;
@@ -15,15 +16,24 @@ const ensureConfigured = () => {
   if (!isCloudinaryConfigured()) {
     throw new ApiError(
       500,
-      "Image upload is not configured. Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET in the backend .env"
+      "Image upload is not configured. Set CLOUDINARY_URL or CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET in the backend .env"
     );
   }
   if (!configured) {
-    cloudinary.config({
-      cloud_name: env.CLOUDINARY_CLOUD_NAME,
-      api_key: env.CLOUDINARY_API_KEY,
-      api_secret: env.CLOUDINARY_API_SECRET,
-    });
+    if (
+      env.CLOUDINARY_CLOUD_NAME &&
+      env.CLOUDINARY_API_KEY &&
+      env.CLOUDINARY_API_SECRET
+    ) {
+      cloudinary.config({
+        cloud_name: env.CLOUDINARY_CLOUD_NAME,
+        api_key: env.CLOUDINARY_API_KEY,
+        api_secret: env.CLOUDINARY_API_SECRET,
+      });
+    } else if (env.CLOUDINARY_URL) {
+      // `true` resets the SDK config and parses process.env.CLOUDINARY_URL.
+      cloudinary.config(true);
+    }
     configured = true;
   }
 };

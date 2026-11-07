@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../stores/auth.store";
@@ -10,6 +10,8 @@ export default function Topbar() {
   const { theme, toggleTheme } = useThemeStore();
   const nav = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const profileMenuRef = useRef(null);
 
   const navigation = [
     { path: "/dashboard", key: "dashboard", icon: "⌂" },
@@ -18,13 +20,35 @@ export default function Topbar() {
     { path: "/literacy", key: "literacy", icon: "📚" },
     { path: "/blogs", key: "blogs", icon: "📰" },
     { path: "/survey", key: "survey", icon: "📝" },
-    { path: "/profile", key: "profile", icon: "👤" },
   ];
 
+  useEffect(() => {
+    if (!profileOpen) return;
+
+    const handlePointerDown = (e) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(e.target)) {
+        setProfileOpen(false);
+      }
+    };
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") setProfileOpen(false);
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [profileOpen]);
+
   const handleLogout = () => {
+    setProfileOpen(false);
     logout();
     nav("/login");
   };
+
+  const userInitial = (u?.name || "U").charAt(0).toUpperCase();
 
   return (
     <header className="topbar">
@@ -79,17 +103,55 @@ export default function Topbar() {
             <option value="kn">ಕನ್ನಡ</option>
           </select>
 
-          <div className="user-mini">
-            <div className="avatar">{(u?.name || "U").charAt(0).toUpperCase()}</div>
-            <div className="user-mini-text">
-              <strong>{u?.name || "User"}</strong>
-              <span>{u?.occupation || "Member"}</span>
-            </div>
-          </div>
+          <div className="profile-menu" ref={profileMenuRef}>
+            <button
+              type="button"
+              className={`profile-trigger ${profileOpen ? "open" : ""}`}
+              onClick={() => setProfileOpen((v) => !v)}
+              aria-haspopup="menu"
+              aria-expanded={profileOpen}
+              aria-label="Open profile menu"
+            >
+              <span className="avatar">{userInitial}</span>
+              <span className="user-mini-text">
+                <strong>{u?.name || "User"}</strong>
+                <span>{u?.occupation || "Member"}</span>
+              </span>
+              <span className="profile-caret" aria-hidden="true">▾</span>
+            </button>
 
-          <button className="logout-button" onClick={handleLogout}>
-            ↪ <span>{t("logout")}</span>
-          </button>
+            {profileOpen && (
+              <div className="profile-dropdown" role="menu">
+                <div className="profile-dropdown-head">
+                  <span className="avatar">{userInitial}</span>
+                  <span className="user-mini-text">
+                    <strong>{u?.name || "User"}</strong>
+                    <span>{u?.occupation || "Member"}</span>
+                  </span>
+                </div>
+
+                <NavLink
+                  to="/profile"
+                  className="profile-dropdown-item"
+                  role="menuitem"
+                  onClick={() => setProfileOpen(false)}
+                >
+                  <span className="item-icon" aria-hidden="true">👤</span>
+                  {t("profile")}
+                </NavLink>
+
+                <button
+                  type="button"
+                  className="profile-dropdown-item danger"
+                  role="menuitem"
+                  onClick={handleLogout}
+                >
+                  <span className="item-icon" aria-hidden="true">↪</span>
+                  {t("logout")}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </header>

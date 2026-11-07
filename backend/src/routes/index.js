@@ -7,6 +7,7 @@ import dashboardRoutes from "./dashboard.routes.js";
 import healthRoutes from "./health.routes.js";
 import surveyRoutes from "./survey.routes.js";
 import blogRoutes from "./blog.routes.js";
+import chatRoutes from "./chat.routes.js";
 
 const router = Router();
 
@@ -18,5 +19,6 @@ router.use("/expenses", expenseRoutes);
 router.use("/dashboard", dashboardRoutes);
 router.use("/survey", surveyRoutes);
 router.use("/blogs", blogRoutes);
+router.use("/chat", chatRoutes);
 
 export default router;

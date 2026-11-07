@@ -13,6 +13,18 @@ const userSchema = new mongoose.Schema(
     },
     passwordHash: { type: String, required: true, select: false },
     role: { type: String, enum: ["user", "admin"], default: "user" },
+    // Existing accounts are treated as verified; registration explicitly
+    // writes false when a verification email is sent.
+    emailVerified: { type: Boolean, default: true },
+    emailVerifiedAt: { type: Date },
+    emailVerificationSentAt: { type: Date },
+    emailVerificationCodeHash: { type: String, select: false },
+    emailVerificationCodeExpiresAt: { type: Date },
+    emailVerificationAttempts: { type: Number, default: 0 },
+    profileImage: {
+      url: { type: String, default: "" },
+      publicId: { type: String, default: "" },
+    },
     // Financial fields have NO defaults: unknown stays unknown until the
     // user actually provides them (survey or manual profile edit).
     ageGroup: {
@@ -55,6 +67,9 @@ const userSchema = new mongoose.Schema(
 userSchema.methods.toSafeObject = function () {
   const obj = this.toObject();
   delete obj.passwordHash;
+  delete obj.emailVerificationCodeHash;
+  delete obj.emailVerificationCodeExpiresAt;
+  delete obj.emailVerificationAttempts;
   delete obj.__v;
   return obj;
 };

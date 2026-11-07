@@ -47,6 +47,7 @@ export const errorHandler = (err, _req, res, _next) => {
       success: false,
       message: err.message,
       errors: err.errors,
+      ...(err.code && { code: err.code }),
     });
   }
 

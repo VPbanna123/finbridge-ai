@@ -279,6 +279,104 @@ a {
   gap: 8px;
 }
 
+.profile-menu {
+  position: relative;
+}
+
+.profile-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  padding: 4px 10px 4px 4px;
+
+  border: 1px solid transparent;
+  border-radius: 999px;
+
+  background: transparent;
+
+  cursor: pointer;
+
+  transition: 0.15s ease;
+}
+
+.profile-trigger:hover,
+.profile-trigger.open {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+}
+
+.profile-caret {
+  color: #94a3b8;
+  font-size: 0.68rem;
+  line-height: 1;
+}
+
+.profile-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+
+  z-index: 60;
+
+  min-width: 215px;
+
+  padding: 8px;
+
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+
+  background: white;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.14);
+}
+
+.profile-dropdown-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  margin-bottom: 6px;
+  padding: 8px 10px 12px;
+
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.profile-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+
+  width: 100%;
+  padding: 9px 10px;
+
+  border: 0;
+  border-radius: 9px;
+
+  color: #334155;
+  background: transparent;
+
+  font-size: 0.84rem;
+  font-weight: 650;
+  text-align: left;
+
+  cursor: pointer;
+}
+
+.profile-dropdown-item:hover {
+  color: #172033;
+  background: #f1f5f9;
+}
+
+.profile-dropdown-item.danger:hover {
+  color: #dc2626;
+  background: #fef2f2;
+}
+
+.item-icon {
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
 .avatar {
   display: grid;
   place-items: center;
@@ -292,6 +390,14 @@ a {
   background: #dbeafe;
 
   font-weight: 800;
+  overflow: hidden;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
 }
 
 .user-mini-text {
@@ -306,25 +412,6 @@ a {
 .user-mini-text span {
   color: #94a3b8;
   font-size: 0.68rem;
-}
-
-.logout-button {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-
-  padding: 8px 10px;
-
-  border: 0;
-  border-radius: 9px;
-
-  color: #64748b;
-  background: transparent;
-}
-
-.logout-button:hover {
-  color: #dc2626;
-  background: #fef2f2;
 }
 
 .mobile-menu-button {
@@ -1504,6 +1591,39 @@ a {
 
   font-size: 2rem;
   font-weight: 900;
+  overflow: hidden;
+}
+
+.profile-avatar-large img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-avatar-button {
+  position: relative;
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+}
+
+.profile-avatar-badge {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+
+  display: grid;
+  place-items: center;
+
+  width: 28px;
+  height: 28px;
+
+  border: 2px solid white;
+  border-radius: 50%;
+
+  background: #2563eb;
+  color: white;
+  font-size: 0.8rem;
 }
 
 .profile-form {
@@ -1764,6 +1884,26 @@ a {
   font-size: 1rem;
 }
 
+.auth-language-select {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  z-index: 5;
+
+  padding: 8px 12px;
+
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+
+  color: #334155;
+  background: white;
+
+  font-size: 0.8rem;
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
 .auth-card {
   display: flex;
   flex-direction: column;
@@ -1813,12 +1953,113 @@ a {
   font-weight: 800;
 }
 
+.auth-layout:has(> .auth-card-centered) {
+  grid-template-columns: minmax(0, 460px);
+  justify-content: center;
+}
+
+.auth-card-centered {
+  width: 100%;
+  max-width: 460px;
+  margin: auto;
+  text-align: center;
+}
+
+.auth-success-icon {
+  margin-bottom: 18px;
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.auth-secondary-action {
+  margin-top: 10px;
+}
+
+.auth-resend-row {
+  margin: -4px 0 14px;
+  text-align: center;
+  font-size: 0.8rem;
+}
+
+.auth-avatar-picker {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+
+  margin-bottom: 18px;
+  padding: 12px 14px;
+
+  border: 1px dashed #cbd5e1;
+  border-radius: 14px;
+
+  background: #f8fafc;
+}
+
+.auth-avatar-picker strong {
+  display: block;
+  font-size: 0.84rem;
+}
+
+.auth-avatar-picker p {
+  margin: 2px 0 0;
+  font-size: 0.72rem;
+}
+
+.auth-avatar-button {
+  position: relative;
+  flex: 0 0 54px;
+
+  display: grid;
+  place-items: center;
+
+  width: 54px;
+  height: 54px;
+  overflow: hidden;
+
+  border: 0;
+  border-radius: 50%;
+
+  color: #1d4ed8;
+  background: #dbeafe;
+
+  font-size: 1.15rem;
+  font-weight: 800;
+
+  cursor: pointer;
+}
+
+.auth-avatar-button img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.auth-avatar-badge {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+
+  display: grid;
+  place-items: center;
+
+  width: 20px;
+  height: 20px;
+
+  border: 2px solid white;
+  border-radius: 50%;
+
+  background: #2563eb;
+  color: white;
+  font-size: 0.72rem;
+  line-height: 1;
+}
+
 /* =========================================================
    RESPONSIVE
 ========================================================= */
 
 @media (max-width: 1050px) {
-  .user-mini {
+  .user-mini-text {
     display: none;
   }
 
@@ -1871,10 +2112,6 @@ a {
 
   .topbar-actions {
     margin-left: auto;
-  }
-
-  .logout-button span {
-    display: none;
   }
 
   .stats-grid {
@@ -2950,7 +3187,37 @@ a {
   background: #1a1a1a;
 }
 
+.dark .profile-trigger:hover,
+.dark .profile-trigger.open {
+  background: #1a1a1a;
+  border-color: #2a2a2a;
+}
+
+.dark .profile-dropdown {
+  background: #0a0a0a;
+  border-color: #2a2a2a;
+}
+
+.dark .profile-dropdown-head {
+  border-bottom-color: #2a2a2a;
+}
+
+.dark .profile-dropdown-item {
+  color: #d4d4d4;
+}
+
+.dark .profile-dropdown-item:hover {
+  color: #f5f5f5;
+  background: #1a1a1a;
+}
+
+.dark .profile-dropdown-item.danger:hover {
+  color: #fca5a5;
+  background: #2a0a0a;
+}
+
 .dark .language-select,
+.dark .auth-language-select,
 .dark .search-input,
 .dark .filter-button,
 .dark .icon-button,
@@ -3141,9 +3408,16 @@ a {
 
 .dark .literacy-card-number,
 .dark .comment-avatar,
-.dark .avatar {
+.dark .avatar,
+.dark .profile-avatar-large,
+.dark .auth-avatar-button {
   color: #93c5fd;
   background: #262626;
+}
+
+.dark .auth-avatar-picker {
+  border-color: #2a2a2a;
+  background: #111111;
 }
 
 .dark .btn.secondary {
@@ -3253,13 +3527,4 @@ a {
 .dark .spinner {
   border-color: #262626;
   border-top-color: #60a5fa;
-}
-
-.dark .logout-button {
-  color: #b3b3b3;
-}
-
-.dark .logout-button:hover {
-  color: #fca5a5;
-  background: #2a0a0a;
 }

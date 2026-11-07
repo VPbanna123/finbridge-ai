@@ -4,8 +4,10 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "../../stores/auth.store";
 import client from "../../api/client";
 import { surveyApi } from "../../api/index";
+import { resendVerification } from "../../api/auth.api";
 import { localized, formatCurrency } from "../../lib/utils";
 import { stripMarkdown } from "../../lib/markdown";
+import { FARMER_PORTAL_URL } from "../../config/constants";
 import Loading from "../../components/ui/Loading";
 import ErrorMessage from "../../components/ui/ErrorMessage";
 import EmptyState from "../../components/ui/EmptyState";
@@ -16,6 +18,7 @@ export default function Dashboard() {
   const [d, setD] = useState(null);
   const [surveyStatus, setSurveyStatus] = useState(null);
   const [error, setError] = useState("");
+  const [verifyMessage, setVerifyMessage] = useState("");
 
   useEffect(() => {
     let mounted = true;
@@ -25,7 +28,7 @@ export default function Dashboard() {
         const { data } = await client.get("/dashboard");
         if (mounted) setD(data);
       } catch (e) {
-        if (mounted) setError(e.response?.data?.message || "Unable to load your dashboard.");
+        if (mounted) setError(e.response?.data?.message || t("dashboard.unableLoad"));
       }
     }
     async function fetchSurveyStatus() {
@@ -39,26 +42,50 @@ export default function Dashboard() {
     fetchDashboard();
     fetchSurveyStatus();
     return () => { mounted = false; };
-  }, []);
+  }, [t]);
 
-  if (!d && !error) return <Loading text="Preparing your dashboard..." />;
+  if (!d && !error) return <Loading text={t("common.preparing")} />;
 
   const recommendations = d?.recommendations || [];
+  const firstName = u?.name?.split(" ")[0] || t("dashboard.welcomeFallback");
+
+  const resendEmail = async () => {
+    if (!u?.email) return;
+    try {
+      await resendVerification(u.email);
+      setVerifyMessage(t("dashboard.emailSent"));
+    } catch {
+      setVerifyMessage("");
+    }
+  };
 
   return (
     <div className="dashboard-page">
       <section className="welcome-banner">
         <div>
-          <span className="eyebrow">YOUR FINANCIAL HUB</span>
+          <span className="eyebrow">{t("dashboard.eyebrow")}</span>
           <h1>
-            {t("dashboard")}, <span>{u?.name?.split(" ")[0] || "there"} 👋</span>
+            {t("nav.dashboard")}, <span>{t("dashboard.welcome", { name: firstName })}</span>
           </h1>
-          <p>Learn, discover and manage your financial information from one place.</p>
+          <p>{t("dashboard.subtitle")}</p>
         </div>
         <div className="welcome-illustration">💰</div>
       </section>
 
       <ErrorMessage message={error} />
+
+      {u?.emailVerified === false && (
+        <div className="survey-cta verify-cta">
+          <span className="survey-cta-icon">✉️</span>
+          <div>
+            <strong>{t("dashboard.verifyTitle")}</strong>
+            <p className="muted">{verifyMessage || t("dashboard.verifyText")}</p>
+          </div>
+          <button type="button" className="btn secondary" onClick={resendEmail}>
+            {t("dashboard.resendEmail")}
+          </button>
+        </div>
+      )}
 
       <section className="krishi-sakhi-banner" aria-labelledby="krishi-sakhi-heading">
         <div className="krishi-sakhi-visual" aria-hidden="true">🌾</div>
@@ -68,7 +95,7 @@ export default function Dashboard() {
         </div>
         <a
           className="krishi-sakhi-link"
-          href="https://krishisakhi.vijaypal.me/"
+          href={FARMER_PORTAL_URL}
           target="_blank"
           rel="noopener noreferrer"
         >
@@ -82,15 +109,13 @@ export default function Dashboard() {
           <div>
             <strong>
               {surveyStatus === "not_started"
-                ? "Complete your financial profile"
-                : "Finish your financial profile"}
+                ? t("dashboard.surveyCompleteTitle")
+                : t("dashboard.surveyFinishTitle")}
             </strong>
-            <p className="muted">
-              Answer a few questions so we can personalize your scheme recommendations.
-            </p>
+            <p className="muted">{t("dashboard.surveyText")}</p>
           </div>
           <NavLink to="/survey" className="btn primary">
-            {surveyStatus === "not_started" ? "Start survey" : "Continue"} →
+            {surveyStatus === "not_started" ? t("dashboard.startSurvey") : t("dashboard.continue")} →
           </NavLink>
         </div>
       )}
@@ -100,26 +125,30 @@ export default function Dashboard() {
           <section className="stats-grid">
             <div className="stat-card">
               <div className="stat-icon blue">₹</div>
-              <div><span>Total expenses</span><strong>{formatCurrency(d.totalExpenses)}</strong></div>
+              <div><span>{t("dashboard.totalExpenses")}</span><strong>{formatCurrency(d.totalExpenses)}</strong></div>
             </div>
             <div className="stat-card">
               <div className="stat-icon green">🏛️</div>
-              <div><span>Recommended schemes</span><strong>{recommendations.length}</strong></div>
+              <div><span>{t("dashboard.recommendedSchemes")}</span><strong>{recommendations.length}</strong></div>
             </div>
             <div className="stat-card">
               <div className="stat-icon purple">📚</div>
-              <div><span>Financial learning</span><strong>Explore</strong></div>
+              <div><span>{t("dashboard.financialLearning")}</span><strong>{t("dashboard.explore")}</strong></div>
             </div>
           </section>
 
           <section className="dashboard-grid">
             <div className="dashboard-main-card">
               <div className="section-heading">
-                <div><span className="eyebrow">PERSONALIZED FOR YOU</span><h2>Recommended schemes</h2></div>
-                <NavLink to="/schemes" className="text-link">View all →</NavLink>
+                <div><span className="eyebrow">{t("dashboard.personalizedForYou")}</span><h2>{t("dashboard.recommendedSchemesTitle")}</h2></div>
+                <NavLink to="/schemes" className="text-link">{t("dashboard.viewAll")}</NavLink>
               </div>
               {recommendations.length === 0 ? (
-                <EmptyState icon="🏛️" title="No recommendations yet" text="Complete more of your profile to discover relevant schemes." />
+                <EmptyState
+                  icon="🏛️"
+                  title={t("dashboard.noRecommendationsTitle")}
+                  text={t("dashboard.noRecommendationsText")}
+                />
               ) : (
                 <div className="recommendation-list">
                   {recommendations.slice(0, 4).map((x) => (
@@ -137,15 +166,15 @@ export default function Dashboard() {
             </div>
 
             <div className="dashboard-side-card">
-              <div className="section-heading"><div><span className="eyebrow">LEARN</span><h2>Financial literacy</h2></div></div>
-              <p className="muted">Build your understanding of banking, digital payments, investments and taxes.</p>
+              <div className="section-heading"><div><span className="eyebrow">{t("dashboard.learn")}</span><h2>{t("dashboard.financialLiteracy")}</h2></div></div>
+              <p className="muted">{t("dashboard.literacyText")}</p>
               <div className="learning-mini-list">
-                <div><span>🏦</span><strong>Banking basics</strong></div>
-                <div><span>📱</span><strong>Digital payments</strong></div>
-                <div><span>📈</span><strong>Investments</strong></div>
-                <div><span>🧾</span><strong>Taxes</strong></div>
+                <div><span>🏦</span><strong>{t("dashboard.bankingBasics")}</strong></div>
+                <div><span>📱</span><strong>{t("dashboard.digitalPayments")}</strong></div>
+                <div><span>📈</span><strong>{t("dashboard.investments")}</strong></div>
+                <div><span>🧾</span><strong>{t("dashboard.taxes")}</strong></div>
               </div>
-              <NavLink to="/literacy" className="btn secondary full-width">Start learning →</NavLink>
+              <NavLink to="/literacy" className="btn secondary full-width">{t("dashboard.startLearning")}</NavLink>
             </div>
           </section>
         </>
