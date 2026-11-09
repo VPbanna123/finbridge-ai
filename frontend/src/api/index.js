@@ -6,3 +6,4 @@ export * as userApi from "./user.api";
 export * as dashboardApi from "./dashboard.api";
 export * as surveyApi from "./survey.api";
 export * as blogApi from "./blog.api";
+export * as chatApi from "./chat.api";

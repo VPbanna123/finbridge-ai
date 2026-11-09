@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import client from "../../api/client";
-import { formatCurrency } from "../../lib/utils";
+import { formatCurrency, toLocale, translateOption } from "../../lib/utils";
 import { categoryIcons } from "../../config/constants";
 import { expenseSchema } from "../../lib/schemas";
 import Loading from "../../components/ui/Loading";
 import ErrorMessage from "../../components/ui/ErrorMessage";
 
 export default function Tracker() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [m, setM] = useState(new Date());
   const [es, setE] = useState([]);
   const [selectedDay, setSelectedDay] = useState(new Date().getDate());
@@ -18,6 +18,7 @@ export default function Tracker() {
   const [error, setError] = useState("");
   const [fieldError, setFieldError] = useState("");
 
+  const locale = toLocale(i18n.language);
   const ms = `${m.getFullYear()}-${String(m.getMonth() + 1).padStart(2, "0")}`;
 
   async function loadExpenses() {
@@ -27,7 +28,7 @@ export default function Tracker() {
       const { data } = await client.get(`/expenses?month=${ms}`);
       setE(data.expenses || []);
     } catch (e) {
-      setError(e.response?.data?.message || "Unable to load your expenses.");
+      setError(e.response?.data?.message || t("tracker.unableLoad"));
     } finally {
       setLoading(false);
     }
@@ -60,7 +61,7 @@ export default function Tracker() {
       setF({ amount: "", category: "food", note: "" });
       await loadExpenses();
     } catch (e) {
-      setError(e.response?.data?.message || "Unable to save the expense.");
+      setError(e.response?.data?.message || t("tracker.unableSave"));
     } finally {
       setSaving(false);
     }
@@ -73,13 +74,23 @@ export default function Tracker() {
     setSelectedDay(Math.min(selectedDay, nextDays));
   };
 
+  const weekdays = [
+    t("tracker.weekdays.sun"),
+    t("tracker.weekdays.mon"),
+    t("tracker.weekdays.tue"),
+    t("tracker.weekdays.wed"),
+    t("tracker.weekdays.thu"),
+    t("tracker.weekdays.fri"),
+    t("tracker.weekdays.sat"),
+  ];
+
   return (
     <div className="content-page">
       <section className="page-hero tracker-hero">
         <div>
-          <span className="eyebrow">YOUR MONEY</span>
-          <h1>{t("tracker")}</h1>
-          <p>Record your everyday spending and get a simple view of where your money goes.</p>
+          <span className="eyebrow">{t("tracker.eyebrow")}</span>
+          <h1>{t("nav.tracker")}</h1>
+          <p>{t("tracker.subtitle")}</p>
         </div>
         <div className="hero-icon">📊</div>
       </section>
@@ -90,11 +101,11 @@ export default function Tracker() {
         <div className="tracker-total">
           <span>{t("total")}</span>
           <strong>{formatCurrency(total)}</strong>
-          <small>{m.toLocaleDateString(undefined, { month: "long", year: "numeric" })}</small>
+          <small>{m.toLocaleDateString(locale, { month: "long", year: "numeric" })}</small>
         </div>
         <div className="tracker-tip">
           <span>💡</span>
-          <div><strong>Small habit, useful insight</strong><p>Recording expenses regularly can help you understand your spending patterns.</p></div>
+          <div><strong>{t("tracker.tipTitle")}</strong><p>{t("tracker.tipText")}</p></div>
         </div>
       </div>
 
@@ -102,14 +113,14 @@ export default function Tracker() {
         <section className="calendar-card">
           <div className="calendar-header">
             <button className="icon-button" onClick={() => changeMonth(-1)}>←</button>
-            <h2>{m.toLocaleDateString(undefined, { month: "long", year: "numeric" })}</h2>
+            <h2>{m.toLocaleDateString(locale, { month: "long", year: "numeric" })}</h2>
             <button className="icon-button" onClick={() => changeMonth(1)}>→</button>
           </div>
 
-          {loading ? <Loading text="Loading expenses..." /> : (
+          {loading ? <Loading text={t("tracker.loadingExpenses")} /> : (
             <>
               <div className="calendar-weekdays">
-                {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map((day) => <span key={day}>{day}</span>)}
+                {weekdays.map((day) => <span key={day}>{day}</span>)}
               </div>
               <div className="calendar-grid">
                 {Array.from({ length: firstDay }).map((_, i) => <div className="calendar-empty" key={`empty-${i}`} />)}
@@ -130,17 +141,20 @@ export default function Tracker() {
 
         <section className="expense-panel">
           <div className="expense-panel-header">
-            <span className="eyebrow">SELECTED DATE</span>
-            <h2>{m.toLocaleDateString(undefined, { day: "numeric", month: "long" })}</h2>
+            <span className="eyebrow">{t("tracker.selectedDate")}</span>
+            <h2>{m.toLocaleDateString(locale, { day: "numeric", month: "long" })}</h2>
           </div>
 
           {selectedExpenses.length > 0 && (
             <div className="selected-expenses">
-              <h3>Expenses on this day</h3>
+              <h3>{t("tracker.expensesOnDay")}</h3>
               {selectedExpenses.map((expense) => (
                 <div className="expense-row" key={expense._id}>
                   <div className="expense-category-icon">{categoryIcons[expense.category] || "📌"}</div>
-                  <div><strong>{expense.category}</strong><span>{expense.note || "No note"}</span></div>
+                  <div>
+                    <strong>{translateOption(t, "categories", expense.category)}</strong>
+                    <span>{expense.note || t("tracker.noNote")}</span>
+                  </div>
                   <b>{formatCurrency(expense.amount)}</b>
                 </div>
               ))}
@@ -148,23 +162,27 @@ export default function Tracker() {
           )}
 
           <form onSubmit={handleSubmit} className="expense-form" noValidate>
-            <h3>Add expense</h3>
+            <h3>{t("tracker.addExpense")}</h3>
             <label className="field">
-              <span>Amount</span>
-              <input className="input" type="number" min="1" placeholder="₹ 500" value={f.amount} onChange={(e) => setF({ ...f, amount: e.target.value })} />
+              <span>{t("tracker.amount")}</span>
+              <input className="input" type="number" min="1" placeholder={t("tracker.amountPlaceholder")} value={f.amount} onChange={(e) => setF({ ...f, amount: e.target.value })} />
               {fieldError && <small className="text-red-600 text-xs">{fieldError}</small>}
             </label>
             <label className="field">
-              <span>Category</span>
+              <span>{t("tracker.category")}</span>
               <select className="input" value={f.category} onChange={(e) => setF({ ...f, category: e.target.value })}>
-                {Object.keys(categoryIcons).map((x) => <option key={x} value={x}>{categoryIcons[x]} {x}</option>)}
+                {Object.keys(categoryIcons).map((x) => (
+                  <option key={x} value={x}>{categoryIcons[x]} {translateOption(t, "categories", x)}</option>
+                ))}
               </select>
             </label>
             <label className="field">
-              <span>Note</span>
-              <input className="input" placeholder="What was this expense for?" value={f.note} onChange={(e) => setF({ ...f, note: e.target.value })} />
+              <span>{t("tracker.note")}</span>
+              <input className="input" placeholder={t("tracker.notePlaceholder")} value={f.note} onChange={(e) => setF({ ...f, note: e.target.value })} />
             </label>
-            <button className="btn primary full-width" disabled={saving}>{saving ? "Saving..." : `${t("save")} expense`}</button>
+            <button className="btn primary full-width" disabled={saving}>
+              {saving ? t("common.saving") : t("tracker.saveExpense")}
+            </button>
           </form>
         </section>
       </div>

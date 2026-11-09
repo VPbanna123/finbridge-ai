@@ -1,11 +1,15 @@
+import { useTranslation } from "react-i18next";
+
 export default function Footer() {
+  const { t } = useTranslation();
+
   return (
     <footer className="footer">
       <div>
         <strong>FinBridge AI</strong>
-        <span> • Financial awareness & inclusion</span>
+        <span> • {t("footer.tagline")}</span>
       </div>
-      <span>Built for education, awareness and accessibility.</span>
+      <span>{t("footer.builtFor")}</span>
     </footer>
   );
 }

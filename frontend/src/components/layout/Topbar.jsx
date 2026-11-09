@@ -20,6 +20,7 @@ export default function Topbar() {
     { path: "/literacy", key: "literacy", icon: "📚" },
     { path: "/blogs", key: "blogs", icon: "📰" },
     { path: "/survey", key: "survey", icon: "📝" },
+    { path: "/chat", key: "chat", icon: "🤖" },
   ];
 
   useEffect(() => {
@@ -49,6 +50,11 @@ export default function Topbar() {
   };
 
   const userInitial = (u?.name || "U").charAt(0).toUpperCase();
+  const avatarContent = u?.profileImage?.url ? (
+    <img src={u.profileImage.url} alt={u.name || t("nav.profile")} />
+  ) : (
+    userInitial
+  );
 
   return (
     <header className="topbar">
@@ -78,7 +84,7 @@ export default function Topbar() {
               className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}
             >
               <span>{item.icon}</span>
-              {t(item.key)}
+              {t(`nav.${item.key}`)}
             </NavLink>
           ))}
         </nav>
@@ -112,10 +118,10 @@ export default function Topbar() {
               aria-expanded={profileOpen}
               aria-label="Open profile menu"
             >
-              <span className="avatar">{userInitial}</span>
+              <span className="avatar">{avatarContent}</span>
               <span className="user-mini-text">
-                <strong>{u?.name || "User"}</strong>
-                <span>{u?.occupation || "Member"}</span>
+                <strong>{u?.name || t("common.user")}</strong>
+                <span>{u?.occupation ? t(`options.occupation.${u.occupation}`, { defaultValue: u.occupation }) : t("common.member")}</span>
               </span>
               <span className="profile-caret" aria-hidden="true">▾</span>
             </button>
@@ -123,10 +129,10 @@ export default function Topbar() {
             {profileOpen && (
               <div className="profile-dropdown" role="menu">
                 <div className="profile-dropdown-head">
-                  <span className="avatar">{userInitial}</span>
+                  <span className="avatar">{avatarContent}</span>
                   <span className="user-mini-text">
-                    <strong>{u?.name || "User"}</strong>
-                    <span>{u?.occupation || "Member"}</span>
+                    <strong>{u?.name || t("common.user")}</strong>
+                    <span>{u?.occupation ? t(`options.occupation.${u.occupation}`, { defaultValue: u.occupation }) : t("common.member")}</span>
                   </span>
                 </div>
 
@@ -137,7 +143,7 @@ export default function Topbar() {
                   onClick={() => setProfileOpen(false)}
                 >
                   <span className="item-icon" aria-hidden="true">👤</span>
-                  {t("profile")}
+                  {t("nav.profile")}
                 </NavLink>
 
                 <button
@@ -147,7 +153,7 @@ export default function Topbar() {
                   onClick={handleLogout}
                 >
                   <span className="item-icon" aria-hidden="true">↪</span>
-                  {t("logout")}
+                  {t("nav.logout")}
                 </button>
               </div>
             )}

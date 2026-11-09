@@ -3,20 +3,6 @@ import { useTranslation } from "react-i18next";
 import { literacyIcons } from "../../config/constants";
 import { useDebounce } from "../../hooks/useDebounce";
 
-const categoryNames = {
-  banking: "Banking",
-  investments: "Investments",
-  taxes: "Taxes",
-  procedures: "Financial procedures",
-  digital: "Digital finance",
-};
-
-const TAG_LABELS = {
-  basics: "Basics",
-  safety: "Safety",
-  advanced: "Advanced",
-};
-
 /**
  * Each topic has an explanation plus trusted official links so users can go
  * deeper on exactly what they choose.
@@ -196,6 +182,8 @@ const ALL = "all";
 
 export default function Literacy() {
   const { t } = useTranslation();
+  const categoryName = (category) => t(`literacy.categories.${category}`);
+  const tagLabel = (tag) => t(`literacy.tags.${tag}`);
   const [topic, setTopic] = useState(ALL);
   const [tag, setTag] = useState(ALL);
   const [query, setQuery] = useState("");
@@ -232,18 +220,15 @@ export default function Literacy() {
   }, [results]);
 
   const topics = [ALL, ...Object.keys(literacy)];
-  const tags = [ALL, ...Object.keys(TAG_LABELS)];
+  const tags = [ALL, ...["basics", "safety", "advanced"]];
 
   return (
     <div className="content-page">
       <section className="page-hero literacy-hero">
         <div>
-          <span className="eyebrow">LEARN & UNDERSTAND</span>
-          <h1>{t("literacy")}</h1>
-          <p>
-            Pick only the topics you care about. Search, filter, and follow trusted
-            official links to learn more.
-          </p>
+          <span className="eyebrow">{t("literacy.eyebrow")}</span>
+          <h1>{t("nav.literacy")}</h1>
+          <p>{t("literacy.subtitle")}</p>
         </div>
         <div className="hero-icon">📚</div>
       </section>
@@ -253,7 +238,7 @@ export default function Literacy() {
           <span>⌕</span>
           <input
             className="search-input"
-            placeholder="Search topics, e.g. UPI, PAN, mutual fund…"
+            placeholder={t("literacy.searchPlaceholder")}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
@@ -265,7 +250,7 @@ export default function Literacy() {
               className={`chip ${tag === x ? "active" : ""}`}
               onClick={() => setTag(x)}
             >
-              {x === ALL ? "All levels" : TAG_LABELS[x]}
+              {x === ALL ? t("literacy.allLevels") : tagLabel(x)}
             </button>
           ))}
         </div>
@@ -273,7 +258,7 @@ export default function Literacy() {
 
       <div className="literacy-layout">
         <aside className="literacy-sidebar">
-          <h3>Topics</h3>
+          <h3>{t("literacy.topics")}</h3>
           {topics.map((x) => (
             <button
               key={x}
@@ -281,7 +266,7 @@ export default function Literacy() {
               onClick={() => setTopic(x)}
             >
               <span>{x === ALL ? "🗂️" : literacyIcons[x]}</span>
-              {x === ALL ? "All topics" : categoryNames[x]}
+              {x === ALL ? t("literacy.allTopics") : categoryName(x)}
               <span className="tab-arrow">→</span>
             </button>
           ))}
@@ -291,8 +276,8 @@ export default function Literacy() {
           {results.length === 0 ? (
             <div className="empty-state">
               <div className="empty-icon">🔎</div>
-              <h3>No matching topics</h3>
-              <p>Try a different search term, topic or level.</p>
+              <h3>{t("literacy.noResultsTitle")}</h3>
+              <p>{t("literacy.noResultsText")}</p>
             </div>
           ) : (
             grouped.map(([cat, items]) => (
@@ -300,8 +285,8 @@ export default function Literacy() {
                 <div className="literacy-heading">
                   <span>{literacyIcons[cat]}</span>
                   <div>
-                    <span className="eyebrow">TOPIC</span>
-                    <h2>{categoryNames[cat]}</h2>
+                    <span className="eyebrow">{t("literacy.topicEyebrow")}</span>
+                    <h2>{categoryName(cat)}</h2>
                   </div>
                 </div>
                 <div className="literacy-cards">
@@ -315,7 +300,7 @@ export default function Literacy() {
                           <div className="literacy-tags">
                             {item.tags.map((tg) => (
                               <span className="mini-tag" key={tg}>
-                                {TAG_LABELS[tg] || tg}
+                                {tagLabel(tg)}
                               </span>
                             ))}
                           </div>

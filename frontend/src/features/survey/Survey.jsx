@@ -3,76 +3,9 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "../../stores/auth.store";
 import { surveyApi } from "../../api/index";
 import { surveySchema, validateWith, SURVEY_OPTIONS } from "../../lib/schemas";
+import { translateOption } from "../../lib/utils";
 import Loading from "../../components/ui/Loading";
 import ErrorMessage from "../../components/ui/ErrorMessage";
-
-const OPTION_LABELS = {
-  ageGroup: {
-    "18-25": "18–25",
-    "26-40": "26–40",
-    "41-60": "41–60",
-    "60+": "60+",
-    other: "Other",
-  },
-  occupation: {
-    student: "Student",
-    salaried: "Salaried",
-    small_business: "Small business",
-    farmer: "Farmer",
-    daily_wage: "Daily wage worker",
-    homemaker: "Homemaker",
-    senior_citizen: "Senior citizen",
-    other: "Other",
-  },
-  incomeRange: {
-    below_15000: "Below ₹15,000",
-    "15000_30000": "₹15,000 – ₹30,000",
-    "30000_60000": "₹30,000 – ₹60,000",
-    above_60000: "Above ₹60,000",
-  },
-  savingsHabit: {
-    regular: "Save regularly",
-    occasional: "Save occasionally",
-    rarely: "Rarely save",
-    never: "Never save",
-  },
-  expenditurePattern: {
-    balanced: "Balanced",
-    spend_more: "Spend more than I earn",
-    save_more: "Save more than I spend",
-    unsure: "Not sure",
-  },
-  upiUsage: {
-    daily: "Daily",
-    weekly: "Weekly",
-    rarely: "Rarely",
-    never: "Never",
-  },
-  digitalPaymentAwareness: {
-    full: "Fully aware",
-    some: "Somewhat aware",
-    basic: "Basic awareness",
-    none: "Not aware",
-  },
-  financialSecurityKnowledge: {
-    full: "Insurance + emergency fund",
-    partial: "Partial knowledge",
-    none: "No knowledge",
-  },
-  needs: {
-    insurance: "Insurance",
-    pension: "Pension",
-    credit: "Credit / loan",
-    govt_schemes: "Government schemes",
-    investment: "Investment guidance",
-    none: "None",
-  },
-  riskPreference: {
-    low: "Low",
-    medium: "Medium",
-    high: "High",
-  },
-};
 
 const GOAL_OPTIONS = [
   "emergency_fund",
@@ -87,9 +20,6 @@ const GOAL_OPTIONS = [
 
 const goalLabel = (g) =>
   g.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-
-const label = (group, value) =>
-  OPTION_LABELS[group]?.[value] || value?.replace(/_/g, " ") || "Not collected";
 
 const EMPTY = {
   ageGroup: "",
@@ -107,15 +37,15 @@ const EMPTY = {
   riskPreference: "",
 };
 
-const STATUS_LABEL = {
-  not_started: "Not started",
-  partial: "Partially completed",
-  complete: "Completed",
-};
-
 export default function Survey() {
   const { t } = useTranslation();
   const { u } = useAuth();
+  const label = (group, value) => translateOption(t, group, value);
+  const goalText = (goal) =>
+    t(`options.goals.${goal}`, { defaultValue: goalLabel(goal) });
+  const statusLabel = (value) =>
+    t(`options.status.${value}`, { defaultValue: value });
+  const accountSuffix = u?.name ? `, ${u.name.split(" ")[0]}` : "";
   const [form, setForm] = useState(EMPTY);
   const [status, setStatus] = useState("not_started");
   const [profile, setProfile] = useState(null);
@@ -146,7 +76,7 @@ export default function Survey() {
         setStatus(data.status || "not_started");
         setProfile(data.profile || null);
       } catch (e) {
-        if (mounted) setError(e.response?.data?.message || "Unable to load your survey.");
+        if (mounted) setError(e.response?.data?.message || t("survey.unableLoad"));
       } finally {
         if (mounted) setLoading(false);
       }
@@ -207,7 +137,7 @@ export default function Survey() {
     const { data: valid, fieldErrors: errs } = validateWith(surveySchema, payload);
     if (!valid) {
       setFieldErrors(errs);
-      setError("Please fix the highlighted fields before saving.");
+      setError(t("survey.fixFields"));
       setMessage("");
       return;
     }
@@ -219,7 +149,7 @@ export default function Survey() {
       const { data } = await surveyApi.submit(payload);
       setStatus(data.status);
       setProfile(data.profile);
-      setMessage("Survey saved. Your financial profile has been generated.");
+      setMessage(t("survey.saved"));
     } catch (e2) {
       const apiErrors = e2.response?.data?.errors;
       if (Array.isArray(apiErrors) && apiErrors.length) {
@@ -227,7 +157,7 @@ export default function Survey() {
           Object.fromEntries(apiErrors.map((x) => [x.field, x.message]))
         );
       }
-      setError(e2.response?.data?.message || "Unable to save your survey.");
+      setError(e2.response?.data?.message || t("survey.unableSave"));
     } finally {
       setSaving(false);
     }
@@ -241,9 +171,9 @@ export default function Survey() {
       const { data } = await surveyApi.regenerateProfile();
       setProfile(data.profile);
       setStatus(data.status);
-      setMessage("Profile regenerated from your saved responses.");
+      setMessage(t("survey.regenerated"));
     } catch (e) {
-      setError(e.response?.data?.message || "Unable to regenerate your profile.");
+      setError(e.response?.data?.message || t("survey.unableRegenerate"));
     } finally {
       setRegenerating(false);
     }
@@ -253,10 +183,10 @@ export default function Survey() {
     <label className="field">
       <span>{placeholder}</span>
       <select className="input" value={form[key]} onChange={(e) => set(key, e.target.value)}>
-        <option value="">Select…</option>
+        <option value="">{t("common.select")}</option>
         {SURVEY_OPTIONS[group].map((opt) => (
           <option key={opt} value={opt}>
-            {OPTION_LABELS[group][opt]}
+            {label(group, opt)}
           </option>
         ))}
       </select>
@@ -275,35 +205,31 @@ export default function Survey() {
             className={`chip ${active ? "active" : ""}`}
             onClick={() => toggleArray(key, opt)}
           >
-            {OPTION_LABELS[group][opt]}
+            {label(group, opt)}
           </button>
         );
       })}
     </div>
   );
 
-  if (loading) return <Loading text="Loading your survey..." />;
+  if (loading) return <Loading text={t("survey.loading")} />;
 
   return (
     <div className="content-page">
       <section className="page-hero survey-hero">
         <div>
-          <span className="eyebrow">PERSONALIZE YOUR EXPERIENCE</span>
-          <h1>Financial Profile Survey</h1>
-          <p>
-            Your answers generate a financial profile that personalizes scheme
-            recommendations. They are stored privately against your account
-            {u?.name ? `, ${u.name.split(" ")[0]}` : ""}.
-          </p>
+          <span className="eyebrow">{t("survey.eyebrow")}</span>
+          <h1>{t("survey.title")}</h1>
+          <p>{t("survey.subtitle", { name: accountSuffix })}</p>
         </div>
         <div className="hero-icon">📝</div>
       </section>
 
       <div className={`survey-status ${status}`}>
         <span className="status-dot" />
-        <strong>Profile status:</strong> {STATUS_LABEL[status] || status}
+        <strong>{t("survey.profileStatus")}</strong> {statusLabel(status)}
         {status !== "complete" && (
-          <span className="muted"> — answer all questions for the best recommendations.</span>
+          <span className="muted"> {t("survey.statusHint")}</span>
         )}
       </div>
 
@@ -315,28 +241,28 @@ export default function Survey() {
           <div className="profile-section-heading">
             <span>👤</span>
             <div>
-              <h2>Demographics</h2>
-              <p>Basic information about you and where you live.</p>
+              <h2>{t("survey.demographics")}</h2>
+              <p>{t("survey.demographicsText")}</p>
             </div>
           </div>
           <div className="form-grid">
-            {selectField("ageGroup", "ageGroup", "Age group")}
-            {selectField("occupation", "occupation", "Occupation")}
+            {selectField("ageGroup", "ageGroup", t("profile.ageGroup"))}
+            {selectField("occupation", "occupation", t("profile.occupation"))}
             <label className="field">
-              <span>State</span>
+              <span>{t("survey.state")}</span>
               <input
                 className="input"
-                placeholder="e.g. Karnataka"
+                placeholder={t("survey.statePlaceholder")}
                 value={form.state}
                 onChange={(e) => set("state", e.target.value)}
               />
               {fieldErrors.state && <small className="field-error">{fieldErrors.state}</small>}
             </label>
             <label className="field">
-              <span>City / District</span>
+              <span>{t("survey.city")}</span>
               <input
                 className="input"
-                placeholder="e.g. Mysuru"
+                placeholder={t("survey.cityPlaceholder")}
                 value={form.city}
                 onChange={(e) => set("city", e.target.value)}
               />
@@ -349,15 +275,15 @@ export default function Survey() {
           <div className="profile-section-heading">
             <span>💰</span>
             <div>
-              <h2>Financial situation</h2>
-              <p>Income, savings habits and how you manage your money.</p>
+              <h2>{t("survey.financialSituation")}</h2>
+              <p>{t("survey.financialSituationText")}</p>
             </div>
           </div>
           <div className="form-grid">
-            {selectField("incomeRange", "incomeRange", "Monthly income range")}
-            {selectField("savingsHabit", "savingsHabit", "Savings habit")}
-            {selectField("expenditurePattern", "expenditurePattern", "Expenditure pattern")}
-            {selectField("riskPreference", "riskPreference", "Risk preference")}
+            {selectField("incomeRange", "incomeRange", t("survey.incomeRange"))}
+            {selectField("savingsHabit", "savingsHabit", t("survey.savingsHabit"))}
+            {selectField("expenditurePattern", "expenditurePattern", t("survey.expenditurePattern"))}
+            {selectField("riskPreference", "riskPreference", t("survey.riskPreference"))}
           </div>
         </div>
 
@@ -365,21 +291,21 @@ export default function Survey() {
           <div className="profile-section-heading">
             <span>📱</span>
             <div>
-              <h2>Digital financial literacy</h2>
-              <p>Your awareness of UPI, digital payments and financial security.</p>
+              <h2>{t("survey.digitalLiteracy")}</h2>
+              <p>{t("survey.digitalLiteracyText")}</p>
             </div>
           </div>
           <div className="form-grid">
-            {selectField("upiUsage", "upiUsage", "How often do you use UPI?")}
+            {selectField("upiUsage", "upiUsage", t("survey.upiUsage"))}
             {selectField(
               "digitalPaymentAwareness",
               "digitalPaymentAwareness",
-              "Digital payment awareness"
+              t("survey.digitalAwareness")
             )}
             {selectField(
               "financialSecurityKnowledge",
               "financialSecurityKnowledge",
-              "Knowledge of insurance & emergency funds"
+              t("survey.securityKnowledge")
             )}
           </div>
         </div>
@@ -388,8 +314,8 @@ export default function Survey() {
           <div className="profile-section-heading">
             <span>🎯</span>
             <div>
-              <h2>Financial needs</h2>
-              <p>What kind of support would help you most?</p>
+              <h2>{t("survey.needsTitle")}</h2>
+              <p>{t("survey.needsText")}</p>
             </div>
           </div>
           {chipGroup("needs", "needs")}
@@ -398,8 +324,8 @@ export default function Survey() {
           <div className="profile-section-heading" style={{ marginTop: 24 }}>
             <span>🏁</span>
             <div>
-              <h2>Financial goals</h2>
-              <p>Select the goals that matter to you.</p>
+              <h2>{t("survey.goalsTitle")}</h2>
+              <p>{t("survey.goalsText")}</p>
             </div>
           </div>
           <div className="chip-group">
@@ -412,7 +338,7 @@ export default function Survey() {
                   className={`chip ${active ? "active" : ""}`}
                   onClick={() => toggleGoal(goal)}
                 >
-                  {goalLabel(goal)}
+                  {goalText(goal)}
                 </button>
               );
             })}
@@ -422,16 +348,16 @@ export default function Survey() {
 
         <div className="survey-actions">
           <button className="btn primary" disabled={saving}>
-            {saving ? "Saving..." : "Save & generate profile"}
+            {saving ? t("survey.saving") : t("survey.saveGenerate")}
           </button>
           <button
             type="button"
             className="btn secondary"
             onClick={regenerate}
             disabled={regenerating || status === "not_started"}
-            title="Rebuild the profile from your last saved answers"
+            title={t("survey.regenerateTitle")}
           >
-            {regenerating ? "Regenerating..." : "Regenerate profile"}
+            {regenerating ? t("survey.regenerating") : t("survey.regenerate")}
           </button>
         </div>
       </form>
@@ -440,24 +366,24 @@ export default function Survey() {
         <section className="profile-preview">
           <div className="section-heading">
             <div>
-              <span className="eyebrow">GENERATED PROFILE</span>
-              <h2>Your financial profile</h2>
+              <span className="eyebrow">{t("survey.generatedEyebrow")}</span>
+              <h2>{t("survey.yourProfile")}</h2>
             </div>
             <span className={`badge status-${profile.completionStatus}`}>
-              {STATUS_LABEL[profile.completionStatus]}
+              {statusLabel(profile.completionStatus)}
             </span>
           </div>
           <div className="preview-grid">
             <div>
-              <span>Age group</span>
+              <span>{t("profile.ageGroup")}</span>
               <strong>{label("ageGroup", profile.demographics?.ageGroup)}</strong>
             </div>
             <div>
-              <span>Occupation</span>
+              <span>{t("profile.occupation")}</span>
               <strong>{label("occupation", profile.demographics?.occupation)}</strong>
             </div>
             <div>
-              <span>Location</span>
+              <span>{t("survey.location")}</span>
               <strong>
                 {profile.demographics?.city !== "not_collected"
                   ? profile.demographics.city
@@ -465,31 +391,31 @@ export default function Survey() {
               </strong>
             </div>
             <div>
-              <span>Income</span>
+              <span>{t("profile.income")}</span>
               <strong>{label("incomeRange", profile.financial?.incomeRange)}</strong>
             </div>
             <div>
-              <span>Savings</span>
+              <span>{t("survey.savings")}</span>
               <strong>{label("savingsHabit", profile.financial?.savingsHabit)}</strong>
             </div>
             <div>
-              <span>Spending</span>
+              <span>{t("profile.spending")}</span>
               <strong>
                 {label("expenditurePattern", profile.financial?.expenditurePattern)}
               </strong>
             </div>
             <div>
-              <span>UPI usage</span>
+              <span>{t("profile.upiUsage")}</span>
               <strong>{label("upiUsage", profile.literacy?.upiUsage)}</strong>
             </div>
             <div>
-              <span>Digital awareness</span>
+              <span>{t("profile.digitalAwareness")}</span>
               <strong>
                 {label("digitalPaymentAwareness", profile.literacy?.digitalPaymentAwareness)}
               </strong>
             </div>
             <div>
-              <span>Financial security</span>
+              <span>{t("profile.financialSecurity")}</span>
               <strong>
                 {label(
                   "financialSecurityKnowledge",
@@ -498,13 +424,13 @@ export default function Survey() {
               </strong>
             </div>
             <div>
-              <span>Risk preference</span>
+              <span>{t("profile.riskPreference")}</span>
               <strong>{label("riskPreference", profile.riskPreference)}</strong>
             </div>
           </div>
           <div className="preview-lists">
             <div>
-              <span>Needs</span>
+              <span>{t("profile.needs")}</span>
               <div className="chip-group">
                 {(profile.needs || []).length ? (
                   profile.needs.map((n) => (
@@ -513,21 +439,21 @@ export default function Survey() {
                     </span>
                   ))
                 ) : (
-                  <span className="muted">Not collected</span>
+                  <span className="muted">{t("common.notCollected")}</span>
                 )}
               </div>
             </div>
             <div>
-              <span>Goals</span>
+              <span>{t("profile.goals")}</span>
               <div className="chip-group">
                 {(profile.goals || []).length ? (
                   profile.goals.map((g) => (
                     <span className="chip active static" key={g}>
-                      {goalLabel(g)}
+                      {goalText(g)}
                     </span>
                   ))
                 ) : (
-                  <span className="muted">Not collected</span>
+                  <span className="muted">{t("common.notCollected")}</span>
                 )}
               </div>
             </div>

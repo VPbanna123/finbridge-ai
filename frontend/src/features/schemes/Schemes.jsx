@@ -30,7 +30,7 @@ export default function Schemes() {
         const schemes = rec ? data.recommendations.map((x) => x.scheme) : data.schemes;
         if (mounted) setS(schemes || []);
       } catch (e) {
-        if (mounted) setError(e.response?.data?.message || "Unable to load government schemes.");
+        if (mounted) setError(e.response?.data?.message || t("schemes.unableLoad"));
       } finally {
         if (mounted) setLoading(false);
       }
@@ -53,9 +53,9 @@ export default function Schemes() {
     <div className="content-page">
       <section className="page-hero scheme-hero">
         <div>
-          <span className="eyebrow">FINANCIAL INCLUSION</span>
-          <h1>{t("schemes")}</h1>
-          <p>Discover government schemes and understand their eligibility, benefits and application process.</p>
+          <span className="eyebrow">{t("schemes.eyebrow")}</span>
+          <h1>{t("nav.schemes")}</h1>
+          <p>{t("schemes.subtitle")}</p>
         </div>
         <div className="hero-icon">🏛️</div>
       </section>
@@ -71,16 +71,16 @@ export default function Schemes() {
           />
         </div>
         <button className={`filter-button ${rec ? "selected" : ""}`} onClick={() => setRec(!rec)}>
-          {rec ? "✓ Recommended" : "Show recommended"}
+          {rec ? t("schemes.recommended") : t("schemes.showRecommended")}
         </button>
       </div>
 
       <ErrorMessage message={error} />
 
       {loading ? (
-        <Loading text="Finding schemes..." />
+        <Loading text={t("schemes.finding")} />
       ) : filteredSchemes.length === 0 ? (
-        <EmptyState icon="🔎" title="No schemes found" text="Try another search term or view all schemes." />
+        <EmptyState icon="🔎" title={t("schemes.noResultsTitle")} text={t("schemes.noResultsText")} />
       ) : (
         <div className="scheme-grid">
           {filteredSchemes.map((x) => (

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../../stores/auth.store";
 import { blogApi } from "../../api/index";
 import { blogSchema, validateWith } from "../../lib/schemas";
@@ -17,6 +18,7 @@ const readFileAsDataUri = (file) =>
   });
 
 export default function BlogEditor() {
+  const { t } = useTranslation();
   const { slug } = useParams();
   const nav = useNavigate();
   const { u } = useAuth();
@@ -51,7 +53,7 @@ export default function BlogEditor() {
         setBlogId(data.blog._id);
         setExistingImageUrl(data.blog.image?.url || "");
       } catch (e) {
-        if (mounted) setError(e.response?.data?.message || "Unable to load this blog.");
+        if (mounted) setError(e.response?.data?.message || t("editor.unableLoad"));
       } finally {
         if (mounted) setLoading(false);
       }
@@ -70,11 +72,11 @@ export default function BlogEditor() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) {
-      setError("Please choose an image file.");
+      setError(t("editor.imageTypeError"));
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      setError("Image must be 5MB or smaller.");
+      setError(t("editor.imageSizeError"));
       return;
     }
     setError("");
@@ -104,7 +106,7 @@ export default function BlogEditor() {
     });
     if (!valid) {
       setFieldErrors(errs);
-      setError("Please fix the highlighted fields.");
+      setError(t("editor.fixFields"));
       return;
     }
     try {
@@ -127,7 +129,7 @@ export default function BlogEditor() {
       if (Array.isArray(apiErrors) && apiErrors.length) {
         setFieldErrors(Object.fromEntries(apiErrors.map((x) => [x.field, x.message])));
       }
-      setError(e2.response?.data?.message || "Unable to save the blog.");
+      setError(e2.response?.data?.message || t("editor.unableSave"));
     } finally {
       setSaving(false);
     }
@@ -137,25 +139,25 @@ export default function BlogEditor() {
     return (
       <EmptyState
         icon="🔒"
-        title="Admins only"
-        text="You need an administrator account to create or edit blogs."
+        title={t("editor.adminOnlyTitle")}
+        text={t("editor.adminOnlyText")}
       />
     );
   }
 
-  if (loading) return <Loading text="Loading editor..." />;
+  if (loading) return <Loading text={t("editor.loading")} />;
 
   return (
     <div className="content-page">
       <span className="back-link" onClick={() => nav(-1)} role="button">
-        ← Back
+        {t("editor.back")}
       </span>
 
       <section className="page-hero blog-hero">
         <div>
-          <span className="eyebrow">ADMIN</span>
-          <h1>{editing ? "Edit blog" : "Write a new blog"}</h1>
-          <p>Publish articles for all FinBridge users. Images are stored on Cloudinary.</p>
+          <span className="eyebrow">{t("editor.eyebrow")}</span>
+          <h1>{editing ? t("editor.editTitle") : t("editor.newTitle")}</h1>
+          <p>{t("editor.subtitle")}</p>
         </div>
         <div className="hero-icon">✍️</div>
       </section>
@@ -164,24 +166,24 @@ export default function BlogEditor() {
 
       <form className="profile-form" onSubmit={submit}>
         <label className="field">
-          <span>Title</span>
+          <span>{t("editor.title")}</span>
           <input
             className="input"
             value={form.title}
             maxLength={160}
-            placeholder="Blog title"
+            placeholder={t("editor.titlePlaceholder")}
             onChange={(e) => set("title", e.target.value)}
           />
           {fieldErrors.title && <small className="field-error">{fieldErrors.title}</small>}
         </label>
 
         <label className="field" style={{ marginTop: 16 }}>
-          <span>Content</span>
+          <span>{t("editor.content")}</span>
           <textarea
             className="input blog-content-input"
             rows={12}
             value={form.content}
-            placeholder="Write your article. Basic markdown is supported (**bold**, lists, links)."
+            placeholder={t("editor.contentPlaceholder")}
             onChange={(e) => set("content", e.target.value)}
           />
           {fieldErrors.content && <small className="field-error">{fieldErrors.content}</small>}
@@ -191,19 +193,19 @@ export default function BlogEditor() {
           <div className="profile-section-heading">
             <span>🖼️</span>
             <div>
-              <h2>Cover image</h2>
-              <p>Upload a file or draw on the whiteboard.</p>
+              <h2>{t("editor.coverImage")}</h2>
+              <p>{t("editor.coverText")}</p>
             </div>
           </div>
 
           <div className="image-editor">
             <div className="image-preview">
               {newImage ? (
-                <img src={newImage} alt="New cover" />
+                <img src={newImage} alt={t("editor.coverImage")} />
               ) : !removeImage && existingImageUrl ? (
-                <img src={existingImageUrl} alt="Current cover" />
+                <img src={existingImageUrl} alt={t("editor.coverImage")} />
               ) : (
-                <span className="muted">No image selected</span>
+                <span className="muted">{t("editor.noImage")}</span>
               )}
             </div>
             <div className="image-actions">
@@ -220,18 +222,18 @@ export default function BlogEditor() {
                 className="btn secondary"
                 onClick={() => fileRef.current?.click()}
               >
-                Upload image
+                {t("editor.uploadImage")}
               </button>
               <button
                 type="button"
                 className="btn secondary"
                 onClick={() => setWhiteboardOpen(true)}
               >
-                Open whiteboard
+                {t("editor.openWhiteboard")}
               </button>
               {(newImage || (!removeImage && existingImageUrl)) && (
                 <button type="button" className="btn danger" onClick={clearImage}>
-                  Remove image
+                  {t("editor.removeImage")}
                 </button>
               )}
             </div>
@@ -244,15 +246,15 @@ export default function BlogEditor() {
             checked={form.published}
             onChange={(e) => set("published", e.target.checked)}
           />
-          <span>Publish immediately</span>
+          <span>{t("editor.publishNow")}</span>
         </label>
 
         <div className="survey-actions">
           <button className="btn primary" disabled={saving}>
-            {saving ? "Saving..." : editing ? "Update blog" : "Publish blog"}
+            {saving ? t("editor.saving") : editing ? t("editor.update") : t("editor.publish")}
           </button>
           <button type="button" className="btn secondary" onClick={() => nav(-1)}>
-            Cancel
+            {t("common.cancel")}
           </button>
         </div>
       </form>

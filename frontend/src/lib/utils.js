@@ -17,11 +17,28 @@ export function cleanCategory(category = "") {
   return String(category).split("\n")[0].split("|")[0].trim();
 }
 
-export function formatDate(value) {
+export function formatDate(value, language = "en") {
   if (!value) return "";
-  return new Date(value).toLocaleDateString("en-IN", {
+  return new Date(value).toLocaleDateString(toLocale(language), {
     day: "numeric",
     month: "short",
     year: "numeric",
+  });
+}
+
+export const localeMap = {
+  en: "en-IN",
+  hi: "hi-IN",
+  kn: "kn-IN",
+};
+
+export const toLocale = (language = "en") => localeMap[language] || "en-IN";
+
+/** Translate a known enum value with a readable fallback. */
+export function translateOption(t, group, value) {
+  if (!value || value === "not_collected") return t("common.notCollected");
+  const key = `options.${group}.${value}`;
+  return t(key, {
+    defaultValue: String(value).replace(/_/g, " "),
   });
 }

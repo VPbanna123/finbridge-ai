@@ -24,7 +24,7 @@ export default function SchemeDetail() {
         const { data } = await client.get(`/schemes/${slug}`);
         if (mounted) setS(data.scheme);
       } catch (e) {
-        if (mounted) setError(e.response?.data?.message || "Unable to load this scheme.");
+        if (mounted) setError(e.response?.data?.message || t("schemeDetail.unableLoad"));
       } finally {
         if (mounted) setLoading(false);
       }
@@ -33,9 +33,9 @@ export default function SchemeDetail() {
     return () => { mounted = false; };
   }, [slug]);
 
-  if (loading) return <Loading text="Loading scheme details..." />;
+  if (loading) return <Loading text={t("schemeDetail.loading")} />;
   if (error) return <ErrorMessage message={error} />;
-  if (!s) return <EmptyState icon="🏛️" title="Scheme not found" text="The requested government scheme could not be found." />;
+  if (!s) return <EmptyState icon="🏛️" title={t("schemeDetail.notFoundTitle")} text={t("schemeDetail.notFoundText")} />;
 
   const sections = [
     { title: t("eligibility"), icon: "✓", items: s.eligibility },
@@ -46,7 +46,7 @@ export default function SchemeDetail() {
 
   return (
     <div className="scheme-detail-page">
-      <NavLink to="/schemes" className="back-link">← Back to schemes</NavLink>
+      <NavLink to="/schemes" className="back-link">{t("schemeDetail.back")}</NavLink>
       <section className="scheme-detail-header">
         <div className="scheme-icon huge">🏛️</div>
         <div>
@@ -71,11 +71,11 @@ export default function SchemeDetail() {
 
       <div className="official-source">
         <div>
-          <span className="eyebrow">OFFICIAL INFORMATION</span>
-          <h3>Verify the latest details</h3>
-          <p>Scheme rules, eligibility and application requirements may change. Always verify the latest information using the official source.</p>
+          <span className="eyebrow">{t("schemeDetail.officialEyebrow")}</span>
+          <h3>{t("schemeDetail.verifyTitle")}</h3>
+          <p>{t("schemeDetail.verifyText")}</p>
         </div>
-        <a className="btn primary" href={s.officialSource} target="_blank" rel="noreferrer">Visit official source ↗</a>
+        <a className="btn primary" href={s.officialSource} target="_blank" rel="noreferrer">{t("schemeDetail.visitSource")}</a>
       </div>
     </div>
   );

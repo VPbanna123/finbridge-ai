@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 const COLORS = ["#172033", "#2563eb", "#059669", "#dc2626", "#7c3aed", "#f59e0b"];
 const SIZES = [2, 4, 8, 14];
@@ -8,6 +9,7 @@ const SIZES = [2, 4, 8, 14];
  * "Use drawing" exports a PNG data URI that is uploaded to Cloudinary.
  */
 export default function Whiteboard({ onClose, onSave }) {
+  const { t } = useTranslation();
   const canvasRef = useRef(null);
   const drawing = useRef(false);
   const last = useRef(null);
@@ -75,8 +77,8 @@ export default function Whiteboard({ onClose, onSave }) {
     <div className="whiteboard-overlay" role="dialog" aria-modal="true">
       <div className="whiteboard-modal">
         <div className="whiteboard-head">
-          <h3>Whiteboard</h3>
-          <button type="button" className="icon-button" onClick={onClose} aria-label="Close">
+          <h3>{t("whiteboard.title")}</h3>
+          <button type="button" className="icon-button" onClick={onClose} aria-label={t("whiteboard.close")}>
             ✕
           </button>
         </div>
@@ -88,14 +90,14 @@ export default function Whiteboard({ onClose, onSave }) {
               className={`wb-tool ${mode === "pen" ? "active" : ""}`}
               onClick={() => setMode("pen")}
             >
-              ✏️ Pen
+              {t("whiteboard.pen")}
             </button>
             <button
               type="button"
               className={`wb-tool ${mode === "eraser" ? "active" : ""}`}
               onClick={() => setMode("eraser")}
             >
-              🧽 Eraser
+              {t("whiteboard.eraser")}
             </button>
           </div>
 
@@ -110,7 +112,7 @@ export default function Whiteboard({ onClose, onSave }) {
                   setColor(c);
                   setMode("pen");
                 }}
-                aria-label={`Colour ${c}`}
+                aria-label={t("whiteboard.color", { color: c })}
               />
             ))}
           </div>
@@ -122,7 +124,7 @@ export default function Whiteboard({ onClose, onSave }) {
                 key={s}
                 className={`wb-size ${size === s ? "active" : ""}`}
                 onClick={() => setSize(s)}
-                aria-label={`Brush size ${s}`}
+                aria-label={t("whiteboard.brushSize", { size: s })}
               >
                 <span style={{ width: s + 2, height: s + 2 }} />
               </button>
@@ -130,7 +132,7 @@ export default function Whiteboard({ onClose, onSave }) {
           </div>
 
           <button type="button" className="btn secondary wb-clear" onClick={clear}>
-            Clear
+            {t("whiteboard.clear")}
           </button>
         </div>
 
@@ -147,10 +149,10 @@ export default function Whiteboard({ onClose, onSave }) {
 
         <div className="whiteboard-actions">
           <button type="button" className="btn secondary" onClick={onClose}>
-            Cancel
+            {t("whiteboard.cancel")}
           </button>
           <button type="button" className="btn primary" onClick={save}>
-            Use drawing as image
+            {t("whiteboard.useDrawing")}
           </button>
         </div>
       </div>

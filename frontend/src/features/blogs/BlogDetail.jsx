@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { NavLink, useNavigate, useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../../stores/auth.store";
 import { blogApi } from "../../api/index";
 import { commentSchema, validateWith } from "../../lib/schemas";
@@ -10,6 +11,7 @@ import ErrorMessage from "../../components/ui/ErrorMessage";
 import EmptyState from "../../components/ui/EmptyState";
 
 export default function BlogDetail() {
+  const { t, i18n } = useTranslation();
   const { slug } = useParams();
   const nav = useNavigate();
   const { u } = useAuth();
@@ -31,7 +33,7 @@ export default function BlogDetail() {
       setBlog(data.blog);
       setComments(data.comments || []);
     } catch (e) {
-      setError(e.response?.data?.message || "Unable to load this blog.");
+      setError(e.response?.data?.message || t("blogDetail.unableLoad"));
     } finally {
       setLoading(false);
     }
@@ -46,7 +48,7 @@ export default function BlogDetail() {
     e.preventDefault();
     const { data: valid, fieldErrors } = validateWith(commentSchema, { text });
     if (!valid) {
-      setCommentError(fieldErrors.text || "Invalid comment");
+      setCommentError(fieldErrors.text || t("blogDetail.invalidComment"));
       return;
     }
     try {
@@ -55,11 +57,11 @@ export default function BlogDetail() {
       const { data } = await blogApi.addComment(blog._id, text.trim());
       setComments((prev) => [
         ...prev,
-        { ...data.comment, authorName: u?.name || "You" },
+        { ...data.comment, authorName: u?.name || t("common.you") },
       ]);
       setText("");
     } catch (e2) {
-      setCommentError(e2.response?.data?.message || "Unable to post your comment.");
+      setCommentError(e2.response?.data?.message || t("blogDetail.unableComment"));
     } finally {
       setPosting(false);
     }
@@ -70,38 +72,38 @@ export default function BlogDetail() {
       await blogApi.removeComment(blog._id, commentId);
       setComments((prev) => prev.filter((c) => c._id !== commentId));
     } catch (e) {
-      setCommentError(e.response?.data?.message || "Unable to delete the comment.");
+      setCommentError(e.response?.data?.message || t("blogDetail.unableDeleteComment"));
     }
   };
 
   const deleteBlog = async () => {
-    if (!window.confirm("Delete this blog and all its comments?")) return;
+    if (!window.confirm(t("blogDetail.deleteConfirm"))) return;
     try {
       await blogApi.remove(blog._id);
       nav("/blogs", { replace: true });
     } catch (e) {
-      setError(e.response?.data?.message || "Unable to delete the blog.");
+      setError(e.response?.data?.message || t("blogDetail.unableDeleteBlog"));
     }
   };
 
-  if (loading) return <Loading text="Loading blog..." />;
+  if (loading) return <Loading text={t("blogDetail.loading")} />;
   if (error) return <ErrorMessage message={error} />;
   if (!blog)
     return (
-      <EmptyState icon="📰" title="Blog not found" text="This article may have been removed." />
+      <EmptyState icon="📰" title={t("blogDetail.notFoundTitle")} text={t("blogDetail.notFoundText")} />
     );
 
   return (
     <div className="content-page">
       <NavLink to="/blogs" className="back-link">
-        ← Back to blogs
+        {t("blogDetail.back")}
       </NavLink>
 
       <article className="blog-article">
         <header className="blog-article-head">
           <div className="blog-meta">
-            <span>{blog.authorName || "FinBridge"}</span>
-            <span>{formatDate(blog.createdAt)}</span>
+            <span>{blog.authorName || t("blogDetail.defaultAuthor")}</span>
+            <span>{formatDate(blog.createdAt, i18n.language)}</span>
           </div>
           <h1>{blog.title}</h1>
           {isAdmin && (
@@ -128,15 +130,15 @@ export default function BlogDetail() {
       <section className="comments-section">
         <div className="section-heading">
           <div>
-            <span className="eyebrow">DISCUSSION</span>
-            <h2>Comments ({comments.length})</h2>
+            <span className="eyebrow">{t("blogDetail.discussion")}</span>
+            <h2>{t("blogDetail.comments", { count: comments.length })}</h2>
           </div>
         </div>
 
         <form className="comment-form" onSubmit={addComment}>
           <textarea
             className="input comment-input"
-            placeholder="Share your thoughts..."
+            placeholder={t("blogDetail.sharePlaceholder")}
             value={text}
             maxLength={1000}
             onChange={(e) => {
@@ -145,13 +147,13 @@ export default function BlogDetail() {
             }}
           />
           <button className="btn primary" disabled={posting}>
-            {posting ? "Posting..." : "Post comment"}
+            {posting ? t("blogDetail.posting") : t("blogDetail.postComment")}
           </button>
         </form>
         {commentError && <div className="alert error-alert">⚠️ {commentError}</div>}
 
         {comments.length === 0 ? (
-          <p className="muted">No comments yet. Be the first to comment.</p>
+          <p className="muted">{t("blogDetail.noComments")}</p>
         ) : (
           <ul className="comment-list">
             {comments.map((c) => {
@@ -165,8 +167,8 @@ export default function BlogDetail() {
                   </div>
                   <div className="comment-body">
                     <div className="comment-head">
-                      <strong>{c.authorName || "User"}</strong>
-                      <span>{formatDate(c.createdAt)}</span>
+                      <strong>{c.authorName || t("common.user")}</strong>
+                      <span>{formatDate(c.createdAt, i18n.language)}</span>
                     </div>
                     <p>{c.text}</p>
                   </div>
@@ -175,7 +177,7 @@ export default function BlogDetail() {
                       type="button"
                       className="comment-delete"
                       onClick={() => removeComment(c._id)}
-                      title="Delete comment"
+                      title={t("blogDetail.deleteComment")}
                     >
                       ✕
                     </button>
