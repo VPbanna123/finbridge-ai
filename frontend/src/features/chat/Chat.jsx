@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { sendMessage, getHistory, listSessions, getChatStatus } from "../../api/chat.api";
+import RichText from "../../lib/markdown";
 
 const STATUS = { CHECKING: "checking", READY: "ready", UNAVAILABLE: "unavailable" };
 
@@ -15,10 +16,13 @@ export default function Chat() {
   const [providerStatus, setProviderStatus] = useState(STATUS.CHECKING);
   const [provider, setProvider] = useState("");
   const [model, setModel] = useState("");
-  const endRef = useRef(null);
+  const messagesRef = useRef(null);
 
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth" });
+    const container = messagesRef.current;
+    if (container) {
+      container.scrollTo({ top: container.scrollHeight, behavior: "smooth" });
+    }
   }, [messages, loading]);
 
   useEffect(() => {
@@ -127,7 +131,7 @@ export default function Chat() {
     <div className="chat-container">
       <aside className="chat-sidebar" aria-label={t("chat.title")}>
         <div className="chat-sidebar-header">
-          <div className="chat-brand"><span className="chat-brand-icon">✦</span><h3>{t("chat.title")}</h3></div>
+          <div className="chat-brand"><span className="chat-brand-icon">✦</span><span>FinBridge AI Chat</span></div>
           <button type="button" className="chat-new-button" onClick={newSession} title={t("chat.newChat")} aria-label={t("chat.newChat")}>＋</button>
         </div>
         <div className={`chat-status ${ready ? "ready" : "offline"}`}><span />{providerStatus === STATUS.CHECKING ? t("common.loading") : ready ? "AI assistant ready" : "AI assistant unavailable"}</div>
@@ -143,12 +147,18 @@ export default function Chat() {
       <section className="chat-panel">
         <div className="chat-header"><div><p className="chat-eyebrow">FINBRIDGE AI</p><h2>{activeSessionId ? t("chat.conversation") : t("chat.startConversation")}</h2></div>{model && <span className="chat-model">{provider ? `${provider} · ${model}` : model}</span>}</div>
         {providerStatus === STATUS.UNAVAILABLE && <div className="alert error-alert chat-config-alert" role="alert"><strong>Unable to reach the AI assistant.</strong><span>{t("chat.aiNotConfigured")} Restart the backend after changing <code>GROQ_MODEL</code> or <code>GEMINI_MODEL</code>.</span></div>}
-        <div className="chat-messages" aria-live="polite">
+        <div className="chat-messages" aria-live="polite" ref={messagesRef}>
           {error && <div className="alert error-alert" role="alert">{error}</div>}
           {!messages.length && !error && <div className="chat-empty"><div className="chat-welcome-icon">✦</div><h3>Your financial guide, on demand.</h3><p>{t("chat.startChatting")}</p><div className="chat-suggestions">{["Create a monthly budget", "Explain a government scheme", "How should I start saving?"].map((suggestion) => <button type="button" key={suggestion} onClick={() => useSuggestion(suggestion)} disabled={!ready}>{suggestion}</button>)}</div></div>}
-          {messages.map((message) => <div key={message.id} className={`chat-message ${message.role === "user" ? "user" : "model"}`}><div className="message-bubble">{message.content}</div><span className="message-role">{message.role === "user" ? t("chat.you") : t("chat.assistant")}</span></div>)}
-          {loading && <div className="chat-message model"><div className="message-bubble">{t("chat.typing")}</div></div>}
-          <div ref={endRef} />
+          {messages.map((message) => (
+            <div key={message.id} className={`chat-message ${message.role === "user" ? "user" : "model"}`}>
+              <div className="message-bubble">
+                {message.role === "user" ? message.content : <RichText text={message.content} />}
+              </div>
+              <span className="message-role">{message.role === "user" ? t("chat.you") : t("chat.assistant")}</span>
+            </div>
+          ))}
+          {loading && <div className="chat-message model"><div className="message-bubble"><span className="typing-dots">…</span></div></div>}
         </div>
         <form className="chat-form" onSubmit={handleSubmit}>
           <input className="input chat-input" type="text" placeholder={providerStatus === STATUS.CHECKING ? t("common.loading") : t("chat.typeMessage")} value={input} onChange={(event) => setInput(event.target.value)} disabled={loading || !ready} autoFocus />

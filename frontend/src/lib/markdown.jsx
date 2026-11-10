@@ -27,6 +27,16 @@ export const stripMarkdown = (text = "") =>
 
 const INLINE_RE = /(\*\*[^*]+\*\*|\[[^\]]+\]\([^)]+\))/g;
 
+const isTableRow = (line) => /^\|.*\|$/.test(line);
+const isTableSeparator = (line) =>
+  /^\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?$/.test(line);
+const splitTableRow = (line) =>
+  line
+    .replace(/^\|/, "")
+    .replace(/\|$/, "")
+    .split("|")
+    .map((cell) => cell.trim());
+
 function renderInline(text, keyPrefix) {
   return String(text)
     .split(INLINE_RE)
@@ -62,12 +72,34 @@ export default function RichText({ text, className }) {
     }
   };
 
-  for (const raw of clean.split("\n")) {
-    const line = raw.trim();
+  const lines = clean.split("\n");
+  for (let i = 0; i < lines.length; i += 1) {
+    const line = lines[i].trim();
     if (!line) {
       flush();
       continue;
     }
+
+    if (isTableRow(line) && isTableSeparator(lines[i + 1]?.trim() || "")) {
+      flush();
+      const headers = splitTableRow(line);
+      const rows = [];
+      i += 2;
+      while (i < lines.length && isTableRow(lines[i].trim())) {
+        rows.push(splitTableRow(lines[i].trim()));
+        i += 1;
+      }
+      i -= 1;
+      blocks.push({ type: "table", headers, rows });
+      continue;
+    }
+
+    if (/^---+$/.test(line)) {
+      flush();
+      blocks.push({ type: "hr" });
+      continue;
+    }
+
     const heading = line.match(/^#{1,6}\s+(.*)$/);
     if (heading) {
       flush();
@@ -102,6 +134,33 @@ export default function RichText({ text, className }) {
       {blocks.map((block, i) => {
         if (block.type === "h") {
           return <h3 key={i}>{renderInline(block.text, `h${i}`)}</h3>;
+        }
+        if (block.type === "hr") {
+          return <hr key={i} />;
+        }
+        if (block.type === "table") {
+          return (
+            <div className="rich-table-wrap" key={i}>
+              <table>
+                <thead>
+                  <tr>
+                    {block.headers.map((header, j) => (
+                      <th key={j}>{renderInline(header, `th${i}-${j}`)}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {block.rows.map((row, r) => (
+                    <tr key={r}>
+                      {block.headers.map((_, c) => (
+                        <td key={c}>{renderInline(row[c] || "", `td${i}-${r}-${c}`)}</td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          );
         }
         if (block.type === "ul") {
           return (
