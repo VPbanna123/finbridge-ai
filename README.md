@@ -114,6 +114,12 @@ CLOUDINARY_URL=
 CLOUDINARY_CLOUD_NAME=
 CLOUDINARY_API_KEY=
 CLOUDINARY_API_SECRET=
+
+# AI chatbot (Groq primary, Gemini fallback)
+GROQ_API_KEY=
+GROQ_MODEL=openai/gpt-oss-120b
+GEMINI_API_KEY=
+GEMINI_MODEL=models/gemini-3.8-flash
 ```
 
 **Frontend** (`frontend/.env`):

@@ -2,7 +2,7 @@ import {
   sendChatMessage,
   getChatHistory,
   getUserChatSessions,
-  getGeminiStatus,
+  getChatStatus,
 } from "../services/chat.service.js";
 import { HTTP_STATUS } from "../utils/constants.js";
 
@@ -41,8 +41,8 @@ export const listSessions = async (req, res) => {
   });
 };
 
-export const geminiStatus = async (_req, res) => {
-  const status = getGeminiStatus();
+export const chatStatus = async (_req, res) => {
+  const status = getChatStatus();
   res.status(HTTP_STATUS.OK).json({
     success: true,
     data: status,

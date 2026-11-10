@@ -3,7 +3,7 @@ import {
   sendMessage,
   getHistory,
   listSessions,
-  geminiStatus,
+  chatStatus,
 } from "../controllers/chat.controller.js";
 import { auth } from "../middlewares/auth.middleware.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -16,6 +16,6 @@ router.use(auth);
 router.post("/send", asyncHandler(sendMessage));
 router.get("/history", asyncHandler(getHistory));
 router.get("/sessions", asyncHandler(listSessions));
-router.get("/status", asyncHandler(geminiStatus));
+router.get("/status", asyncHandler(chatStatus));
 
 export default router;

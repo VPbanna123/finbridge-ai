@@ -479,7 +479,7 @@ const en = {
       send: "Send",
       typing: "FinBridge AI is typing…",
       sendFailed: "Failed to send message. Please try again.",
-      geminiNotConfigured: "AI chatbot is not configured. Please add GEMINI_API_KEY.",
+      aiNotConfigured: "AI chatbot is not configured. Please add GROQ_API_KEY or GEMINI_API_KEY.",
     },
     editor: {
       adminOnlyTitle: "Admins only",
@@ -1009,7 +1009,7 @@ const hi = {
       send: "भेजें",
       typing: "FinBridge AI टाइप कर रहा है…",
       sendFailed: "संदेश भेजने में विफल। कृपया पुनः प्रयास करें।",
-      geminiNotConfigured: "AI चैटबॉट कॉन्फ़िगर नहीं किया गया है। कृपया GEMINI_API_KEY जोड़ें।",
+      aiNotConfigured: "AI चैटबॉट कॉन्फ़िगर नहीं किया गया है। कृपया GROQ_API_KEY या GEMINI_API_KEY जोड़ें।",
     },
     editor: {
       adminOnlyTitle: "केवल व्यवस्थापक",
@@ -1538,7 +1538,7 @@ const kn = {
       send: "ಕಳುಹಿಸಿ",
       typing: "FinBridge AI ಟೈಪಿಂಗ್ ಮಾಡುತ್ತಿದೆ…",
       sendFailed: "ಸಂದೇಶ ಕಳುಹಿಸಲು ವಿಫಲ. ದಯವಿಟ್ಟು ಮತ್ತೊಮ್ಮೆ ಪ್ರಯತ್ನಿಸಿ.",
-      geminiNotConfigured: "AI ಚಾಟ್ಬಾಟ್ ಕಾನ್ಫಿಗರ್ ಮಾಡಿಲ್ಲ. ದಯವಿಟ್ಟು GEMINI_API_KEY ಸೇರಿಸಿ.",
+      aiNotConfigured: "AI ಚಾಟ್ಬಾಟ್ ಕಾನ್ಫಿಗರ್ ಮಾಡಿಲ್ಲ. ದಯವಿಟ್ಟು GROQ_API_KEY ಅಥವಾ GEMINI_API_KEY ಸೇರಿಸಿ.",
     },
     editor: {
       adminOnlyTitle: "ನಿರ್ವಾಹಕರಿಗೆ ಮಾತ್ರ",

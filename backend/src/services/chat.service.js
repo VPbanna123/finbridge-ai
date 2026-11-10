@@ -2,6 +2,11 @@ import { env } from "../config/env.js";
 import { User } from "../models/User.js";
 import { ChatSession } from "../models/Chat.js";
 import { ApiError } from "../utils/ApiError.js";
+import { logger } from "../utils/logger.js";
+
+const GROQ_API_KEY = env.GROQ_API_KEY;
+const GROQ_MODEL = env.GROQ_MODEL || "openai/gpt-oss-120b";
+const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 
 const GEMINI_API_KEY = env.GEMINI_API_KEY || env.GOOGLE_API_KEY;
 // Gemini accepts a model resource such as `models/gemini-3.8-flash`, while the
@@ -12,7 +17,9 @@ const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${en
 
 const MAX_HISTORY_MESSAGES = 10;
 
+const isGroqConfigured = () => Boolean(GROQ_API_KEY);
 const isGeminiConfigured = () => Boolean(GEMINI_API_KEY);
+const isChatConfigured = () => isGroqConfigured() || isGeminiConfigured();
 
 const buildSystemPrompt = (user) => {
   const name = user?.name || "there";
@@ -71,6 +78,17 @@ const getRecentMessages = (messages, limit = MAX_HISTORY_MESSAGES) => {
   return messages.slice(-limit);
 };
 
+const buildGroqMessages = (systemPrompt, recentMessages, userMessage) => {
+  return [
+    { role: "system", content: systemPrompt },
+    ...recentMessages.map((m) => ({
+      role: m.role === "model" ? "assistant" : "user",
+      content: m.content,
+    })),
+    { role: "user", content: userMessage },
+  ];
+};
+
 const buildGeminiContents = (systemPrompt, recentMessages, userMessage) => {
   const contents = [];
   if (systemPrompt) {
@@ -88,6 +106,49 @@ const buildGeminiContents = (systemPrompt, recentMessages, userMessage) => {
   }
   contents.push({ role: "user", parts: [{ text: userMessage }] });
   return contents;
+};
+
+const groqSupportsReasoningEffort = /(gpt-oss|qwen3|deepseek)/i.test(GROQ_MODEL);
+
+const callGroq = async (messages) => {
+  if (!isGroqConfigured()) {
+    throw new ApiError(500, "Groq AI is not configured", [], "GROQ_NOT_CONFIGURED");
+  }
+
+  const body = {
+    model: GROQ_MODEL,
+    messages,
+    temperature: 0.7,
+    max_tokens: 2048,
+    ...(groqSupportsReasoningEffort ? { reasoning_effort: "low" } : {}),
+  };
+
+  try {
+    const res = await fetch(GROQ_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${GROQ_API_KEY}`,
+      },
+      body: JSON.stringify(body),
+    });
+
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      const msg = data?.error?.message || `Groq request failed (${res.status})`;
+      throw new ApiError(502, msg, [], "GROQ_ERROR");
+    }
+
+    const text = data?.choices?.[0]?.message?.content;
+    if (!text) {
+      throw new ApiError(502, "No response from Groq", [], "GROQ_EMPTY");
+    }
+    return text;
+  } catch (err) {
+    if (err instanceof ApiError) throw err;
+    throw new ApiError(502, "Failed to reach Groq AI", [], "GROQ_ERROR");
+  }
 };
 
 const callGemini = async (contents) => {
@@ -131,18 +192,47 @@ export const sendChatMessage = async ({ userId, sessionId, message }) => {
 
   const systemPrompt = buildSystemPrompt(user);
   const recentMessages = getRecentMessages(session.messages, MAX_HISTORY_MESSAGES);
-  const contents = buildGeminiContents(systemPrompt, recentMessages, message.trim());
+  const userMessage = message.trim();
 
-  const aiResponse = await callGemini(contents);
+  let aiResponse;
+  let provider;
+
+  if (isGroqConfigured()) {
+    try {
+      aiResponse = await callGroq(
+        buildGroqMessages(systemPrompt, recentMessages, userMessage)
+      );
+      provider = "groq";
+    } catch (groqError) {
+      if (!isGeminiConfigured()) throw groqError;
+      logger.warn(`Groq request failed (${groqError.message}); falling back to Gemini.`);
+      aiResponse = await callGemini(
+        buildGeminiContents(systemPrompt, recentMessages, userMessage)
+      );
+      provider = "gemini";
+    }
+  } else if (isGeminiConfigured()) {
+    aiResponse = await callGemini(
+      buildGeminiContents(systemPrompt, recentMessages, userMessage)
+    );
+    provider = "gemini";
+  } else {
+    throw new ApiError(
+      500,
+      "No AI provider is configured. Add GROQ_API_KEY or GEMINI_API_KEY.",
+      [],
+      "AI_NOT_CONFIGURED"
+    );
+  }
 
   // Save user message + model response
   session.messages.push(
-    { role: "user", content: message.trim() },
+    { role: "user", content: userMessage },
     { role: "model", content: aiResponse }
   );
   session.updatedAt = new Date();
   if (!session.title || session.title === "New Chat") {
-    session.title = message.trim().slice(0, 60);
+    session.title = userMessage.slice(0, 60);
   }
   await session.save();
 
@@ -150,6 +240,8 @@ export const sendChatMessage = async ({ userId, sessionId, message }) => {
     sessionId: session._id,
     message: aiResponse,
     title: session.title,
+    provider,
+    model: provider === "groq" ? GROQ_MODEL : `models/${GEMINI_MODEL}`,
   };
 };
 
@@ -168,9 +260,23 @@ export const getUserChatSessions = async (userId) => {
     .limit(50);
 };
 
-export const isGeminiConfiguredStatus = () => isGeminiConfigured();
+export const isChatConfiguredStatus = () => isChatConfigured();
 
-export const getGeminiStatus = () => ({
-  configured: isGeminiConfigured(),
-  model: `models/${GEMINI_MODEL}`,
-});
+export const getChatStatus = () => {
+  const provider = isGroqConfigured() ? "groq" : isGeminiConfigured() ? "gemini" : null;
+
+  return {
+    configured: Boolean(provider),
+    provider,
+    model:
+      provider === "groq"
+        ? GROQ_MODEL
+        : provider === "gemini"
+        ? `models/${GEMINI_MODEL}`
+        : null,
+    fallback: isGroqConfigured() && isGeminiConfigured() ? "gemini" : null,
+  };
+};
+
+export const getGeminiStatus = getChatStatus;
+export const isGeminiConfiguredStatus = isChatConfiguredStatus;

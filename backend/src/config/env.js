@@ -39,7 +39,9 @@ export const env = {
   CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
   CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
 
-  // Gemini AI (chatbot)
+  // AI chatbot (Groq primary, Gemini fallback)
+  GROQ_API_KEY: process.env.GROQ_API_KEY,
+  GROQ_MODEL: process.env.GROQ_MODEL || "openai/gpt-oss-120b",
   GOOGLE_API_KEY: process.env.GOOGLE_API_KEY,
   GEMINI_API_KEY: process.env.GEMINI_API_KEY,
   // Accept either `gemini-3.8-flash` or `models/gemini-3.8-flash`.

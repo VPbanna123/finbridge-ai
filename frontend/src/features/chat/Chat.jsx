@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { sendMessage, getHistory, listSessions, geminiStatus } from "../../api/chat.api";
+import { sendMessage, getHistory, listSessions, getChatStatus } from "../../api/chat.api";
 
 const STATUS = { CHECKING: "checking", READY: "ready", UNAVAILABLE: "unavailable" };
 
@@ -13,6 +13,7 @@ export default function Chat() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [providerStatus, setProviderStatus] = useState(STATUS.CHECKING);
+  const [provider, setProvider] = useState("");
   const [model, setModel] = useState("");
   const endRef = useRef(null);
 
@@ -23,7 +24,7 @@ export default function Chat() {
   useEffect(() => {
     let cancelled = false;
     const initialise = async () => {
-      const [sessionsResult, statusResult] = await Promise.allSettled([listSessions(), geminiStatus()]);
+      const [sessionsResult, statusResult] = await Promise.allSettled([listSessions(), getChatStatus()]);
       if (cancelled) return;
 
       if (sessionsResult.status === "fulfilled") {
@@ -38,6 +39,7 @@ export default function Chat() {
         const body = statusResult.value.data;
         const status = body?.data || body;
         setProviderStatus(status?.configured ? STATUS.READY : STATUS.UNAVAILABLE);
+        setProvider(status?.provider || "");
         setModel(status?.model || "");
       } else {
         setProviderStatus(STATUS.UNAVAILABLE);
@@ -90,7 +92,7 @@ export default function Chat() {
     const text = input.trim();
     if (!text || loading) return;
     if (providerStatus !== STATUS.READY) {
-      setError(t("chat.geminiNotConfigured"));
+      setError(t("chat.aiNotConfigured"));
       return;
     }
 
@@ -108,6 +110,8 @@ export default function Chat() {
         { id: `model-${Date.now()}`, role: "model", content: result?.message || t("chat.sendFailed") },
       ]);
       if (result?.sessionId) setActiveSessionId(result.sessionId);
+      if (result?.provider) setProvider(result.provider);
+      if (result?.model) setModel(result.model);
       const sessionsResponse = await listSessions();
       setSessions(Array.isArray(sessionsResponse.data?.data) ? sessionsResponse.data.data : []);
     } catch (requestError) {
@@ -137,8 +141,8 @@ export default function Chat() {
       </aside>
 
       <section className="chat-panel">
-        <div className="chat-header"><div><p className="chat-eyebrow">FINBRIDGE AI</p><h2>{activeSessionId ? t("chat.conversation") : t("chat.startConversation")}</h2></div>{model && <span className="chat-model">{model}</span>}</div>
-        {providerStatus === STATUS.UNAVAILABLE && <div className="alert error-alert chat-config-alert" role="alert"><strong>Unable to reach the AI assistant.</strong><span>{t("chat.geminiNotConfigured")} Restart the backend after changing <code>GEMINI_MODEL</code>.</span></div>}
+        <div className="chat-header"><div><p className="chat-eyebrow">FINBRIDGE AI</p><h2>{activeSessionId ? t("chat.conversation") : t("chat.startConversation")}</h2></div>{model && <span className="chat-model">{provider ? `${provider} · ${model}` : model}</span>}</div>
+        {providerStatus === STATUS.UNAVAILABLE && <div className="alert error-alert chat-config-alert" role="alert"><strong>Unable to reach the AI assistant.</strong><span>{t("chat.aiNotConfigured")} Restart the backend after changing <code>GROQ_MODEL</code> or <code>GEMINI_MODEL</code>.</span></div>}
         <div className="chat-messages" aria-live="polite">
           {error && <div className="alert error-alert" role="alert">{error}</div>}
           {!messages.length && !error && <div className="chat-empty"><div className="chat-welcome-icon">✦</div><h3>Your financial guide, on demand.</h3><p>{t("chat.startChatting")}</p><div className="chat-suggestions">{["Create a monthly budget", "Explain a government scheme", "How should I start saving?"].map((suggestion) => <button type="button" key={suggestion} onClick={() => useSuggestion(suggestion)} disabled={!ready}>{suggestion}</button>)}</div></div>}

@@ -25,7 +25,7 @@ The application is split into two independent deployable parts:
 | Authentication | JWT (jsonwebtoken) + bcryptjs | Stateless auth, password hashing |
 | Validation | express-validator + Zod | Request validation (backend + frontend) |
 | Email Service | Resend | Transactional email (verification codes) |
-| AI / Chatbot | Google Gemini (REST API) | Finance AI chatbot with conversation memory |
+| AI / Chatbot | Groq (primary) + Google Gemini (fallback) | Finance AI chatbot with conversation memory |
 | File Storage | Cloudinary | Blog images, profile photos, whiteboard exports |
 | Security | Helmet, CORS | HTTP security headers, cross-origin config |
 | Lint/Typecheck | `node --check` | Syntax validation |
@@ -51,7 +51,7 @@ The application is split into two independent deployable parts:
 │  │ survey      │  │ survey      │  │ survey.service              │  │
 │  │ blog        │  │ blog        │  │ seed.service                │  │
 │  │ dashboard   │  │ dashboard   │  │ cloudinary.service          │  │
-│  │ chat        │  │ chat        │  │ chat.service (Gemini AI)    │  │
+│  │ chat        │  │ chat        │  │ chat.service (Groq+Gemini)  │  │
 │  │ health      │  │             │  │                             │  │
 │  └─────────────┘  └─────────────┘  └─────────────────────────────┘  │
 │  Middlewares: auth (JWT), validate (express-validator), asyncHandler │
@@ -243,7 +243,9 @@ finbridge-ai/
 | `RESEND_API_KEY` | Resend API key | `re_...` |
 | `RESEND_FROM_EMAIL` | Sender email | `onboarding@resend.dev` |
 | `CLOUDINARY_URL` / `CLOUDINARY_*` | Cloudinary config (optional) | optional |
-| `GOOGLE_API_KEY` | Google AI / Gemini API key | `AIza...` |
+| `GROQ_API_KEY` | Groq API key (primary chatbot provider) | `gsk_...` |
+| `GROQ_MODEL` | Groq model name | `openai/gpt-oss-120b` |
+| `GOOGLE_API_KEY` | Google AI / Gemini API key (fallback) | `AIza...` |
 | `GEMINI_API_KEY` | Gemini API key (alternative to GOOGLE_API_KEY) | optional |
 | `GEMINI_MODEL` | Gemini model name | `models/gemini-3.8-flash` |
 
@@ -271,7 +273,7 @@ finbridge-ai/
 
 ### 9.1 Overview
 
-FinBridge AI includes a finance AI chatbot powered by Google Gemini. Users can ask questions about personal finance, government schemes, budgeting, savings, investments, taxes, and financial planning.
+FinBridge AI includes a finance AI chatbot powered by Groq, with Google Gemini as an automatic fallback if a Groq request fails. Users can ask questions about personal finance, government schemes, budgeting, savings, investments, taxes, and financial planning.
 
 ### 9.2 Data Flow
 
@@ -283,8 +285,8 @@ Client (React)  ──▶  POST /api/chat/send  ──▶  Express Controller
                                                     │
               ┌───────────────────┬─────────────────┴─────────────────┐
               ▼                   ▼                                   ▼
-      MongoDB (ChatSession)   User Profile (DB)              Gemini REST API
-   (last-10 message queue)   (context for system prompt)   (generateContent)
+      MongoDB (ChatSession)   User Profile (DB)          Groq API (primary)
+   (last-10 message queue)   (context for system prompt)  Gemini API (fallback)
               │                   │                                   │
               └───────────────────┴───────────────────────────────────┘
                                                     │
@@ -297,7 +299,7 @@ Client (React)  ──▶  POST /api/chat/send  ──▶  Express Controller
 To prevent hallucination and keep responses grounded, the chatbot uses:
 
 1. **User context from DB**: On the first message of a session, the backend loads the user's profile (name, email, age group, occupation, income range, state, city, language, financial goals, risk preference) and injects it into the system prompt.
-2. **Last-10-message queue**: Only the most recent 10 messages of the current conversation window are sent to Gemini, keeping the context window bounded and focused.
+2. **Last-10-message queue**: Only the most recent 10 messages of the current conversation window are sent to the active AI provider, keeping the context window bounded and focused.
 3. **System prompt**: Explicitly instructs the model to act as FinBridge AI's finance assistant, answer in the user's preferred language, focus on Indian personal finance, and avoid giving regulated investment advice.
 
 ### 9.4 API Endpoints
@@ -307,7 +309,7 @@ To prevent hallucination and keep responses grounded, the chatbot uses:
 | POST | `/api/chat/send` | Send a message, get AI response | Required |
 | GET | `/api/chat/history?sessionId=` | Get chat history for a session | Required |
 | GET | `/api/chat/sessions` | List user's chat sessions | Required |
-| GET | `/api/chat/status` | Check if Gemini is configured | None |
+| GET | `/api/chat/status` | Check configured AI provider (Groq first, Gemini fallback) | None |
 
 ## 10. Future Extension Points
 
